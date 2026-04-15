@@ -1,0 +1,164 @@
+{
+  "folders": [{ "path": "." }],
+  "settings": {
+    "editor.formatOnSave": true,
+    "editor.rulers": [100],
+    "editor.tabSize": 4,
+
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.analysis.extraPaths": ["${workspaceFolder}/python"],
+    "[python]": {
+      "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+
+    "[java]": { "editor.tabSize": 4 },
+    "[c]": { "editor.tabSize": 4 },
+
+    "java.project.sourcePaths":  ["java/src/main/java"],
+    "java.project.outputPath":   "java/out",
+    "java.compile.nullAnalysis.mode": "automatic",
+
+    "C_Cpp.default.compilerPath": "/usr/bin/gcc",
+    "C_Cpp.default.cStandard": "c17",
+
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+      "java/out": true,
+      "c/*.so": false,
+      "c/*.dll": false
+    },
+
+    "search.exclude": {
+      "**/__pycache__": true,
+      "java/out": true,
+      "results": true
+    },
+
+    "terminal.integrated.env.linux": {
+      "PYTHONPATH": "${workspaceFolder}/python"
+    },
+    "terminal.integrated.env.osx": {
+      "PYTHONPATH": "${workspaceFolder}/python"
+    },
+    "terminal.integrated.env.windows": {
+      "PYTHONPATH": "${workspaceFolder}/python"
+    },
+
+    "explorer.fileNesting.enabled": true,
+    "explorer.fileNesting.patterns": {
+      "*.py":    "$(capture).pyc, $(capture).pyi",
+      "Makefile": "requirements.txt, .gitignore, .github"
+    }
+  },
+
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🚀 Train PPO (default)",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/python/train.py",
+        "args": ["--cfg", "python/configs/default.yaml", "--run", "debug_run"],
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/python" }
+      },
+      {
+        "name": "🧪 Run Tests",
+        "type": "python",
+        "request": "launch",
+        "module": "pytest",
+        "args": ["tests/python/", "-v", "--tb=short"],
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/python" }
+      },
+      {
+        "name": "📊 Plot Results",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/plot_results.py",
+        "args": ["--run", "results/run_001", "--format", "pdf", "png"],
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/python" }
+      },
+      {
+        "name": "☕ Java Signal Server",
+        "type": "java",
+        "request": "launch",
+        "mainClass": "traffic.api.TrafficControlServer",
+        "projectName": "TrafficDRL_v2",
+        "args": ["8765"],
+        "vmArgs": "--enable-preview"
+      },
+      {
+        "name": "🔗 Hardware Control Loop",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/run_hardware_loop.py",
+        "args": [
+          "--checkpoint", "results/run_001/checkpoints/best.pt",
+          "--server", "http://localhost:8765",
+          "--duration", "3600"
+        ],
+        "console": "integratedTerminal",
+        "cwd": "${workspaceFolder}",
+        "env": { "PYTHONPATH": "${workspaceFolder}/python" }
+      }
+    ]
+  },
+
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Build C library",
+        "type": "shell",
+        "command": "make c",
+        "group": "build",
+        "presentation": { "reveal": "always" }
+      },
+      {
+        "label": "Run C self-test",
+        "type": "shell",
+        "command": "make c-test",
+        "group": "test"
+      },
+      {
+        "label": "Compile Java",
+        "type": "shell",
+        "command": "make java",
+        "group": "build"
+      },
+      {
+        "label": "Python tests",
+        "type": "shell",
+        "command": "make test",
+        "group": { "kind": "test", "isDefault": true }
+      },
+      {
+        "label": "Clean all",
+        "type": "shell",
+        "command": "make clean",
+        "group": "build"
+      }
+    ]
+  },
+
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.black-formatter",
+      "ms-python.mypy-type-checker",
+      "vscjava.vscode-java-pack",
+      "ms-vscode.cpptools",
+      "ms-toolsai.tensorboard",
+      "eamodio.gitlens",
+      "yzhang.markdown-all-in-one",
+      "ms-azuretools.vscode-docker"
+    ]
+  }
+}
