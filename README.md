@@ -1,177 +1,313 @@
-# IntelliSignal v2 — Expert Codebase
+# Pedestrian-Aware Deep Reinforcement Learning for Adaptive Traffic Signal Control
 
-> Pedestrian-Aware Deep RL for Adaptive Traffic Signal Control  
-> Production-grade, fully typed, multi-language research implementation
+**Authors:** Shreyas Rastogi et al.  
+**Institution:** [Your Institution]  
+**Status:** Research Implementation (arXiv pre-print)  
+**License:** MIT
 
 ---
 
-## Architecture
+## Abstract
+
+We present IntelliSignal, a deep reinforcement learning framework for adaptive traffic signal control that explicitly optimizes for pedestrian safety while maintaining vehicle throughput. Our approach uses Proximal Policy Optimization (PPO) with an Actor-Critic architecture extended to handle multi-modal objectives (vehicle efficiency, pedestrian safety, and signal coordination). The agent learns a curriculum-based policy that generalizes across varying traffic demand levels. Evaluation on a custom 4-way intersection simulator demonstrates **X% improvement in vehicle throughput** and **Y% reduction in unsafe pedestrian events** compared to fixed-time and demand-responsive baselines. Code and evaluation protocols are provided for reproducibility.
+
+**Keywords:** traffic signal control, deep reinforcement learning, pedestrian safety, adaptive systems, urban computing
+
+---
+
+## 1. Introduction
+
+Adaptive traffic signal control (ATSC) is a critical urban infrastructure problem affecting congestion, emissions, and safety. While Deep Reinforcement Learning has shown promise for traffic optimization, existing approaches often:
+
+1. Neglect pedestrian safety as a primary objective
+2. Lack explicit mechanisms for curriculum learning across demand levels
+3. Provide limited reproducibility (closed-source implementations)
+
+IntelliSignal addresses these limitations through:
+- **Pedestrian-aware reward design** with explicit safety constraints
+- **Curriculum learning** that progressively increases traffic demand
+- **Full reproducibility** via typed Python configurations and multi-seed evaluation
+
+This repository contains the complete implementation, evaluation suite, and experimental protocols used in our research.
+
+---
+
+## 2. Methods
+
+### 2.1 Environment Model
+
+We simulate a 4-way signalized intersection with:
+
+**State Representation** (24-dimensional, normalized to [0,1]):
+- Queue lengths and vehicle wait times (per lane)
+- Pedestrian presence and wait times (per crosswalk)
+- Current signal phase (3 actions: NS_GREEN, EW_GREEN, PED_CROSSING)
+- Phase elapsed time and directional pressure metrics
+
+**Reward Function:**
+```
+R(s,a) = α·ΔPressure(a) - β·Neglect(a) + γ·Ped_Served(a) - λ·Unsafe_Events(a)
+```
+Where:
+- ΔPressure: vehicles cleared this phase
+- Neglect: penalty for not serving high-pressure directions
+- Ped_Served: bonus for crossing pedestrians
+- Unsafe_Events: penalty for violations of pedestrian safety constraints
+
+**Demand Profiles:**
+We evaluate across three traffic demand levels:
+- **Low demand:** λ_arrival ∈ [0.10, 0.15] vehicles/sec
+- **Medium demand:** λ_arrival ∈ [0.20, 0.30] vehicles/sec  
+- **High demand:** λ_arrival ∈ [0.30, 0.50] vehicles/sec
+
+### 2.2 Learning Algorithm: Proximal Policy Optimization
+
+**Architecture:**
+- Actor-Critic with shared feature extraction (2 hidden layers, 128 units)
+- Separate pedestrian-aware branch for safety-critical features
+- Categorical action distribution with action masking
+
+**Training:**
+- Rollout buffer: 2048 transitions per update
+- GAE with λ=0.95 for variance reduction
+- Multi-epoch optimization (K_epochs=3)
+- Entropy regularization: β ∈ [0.001, 0.005]
+
+**Curriculum Learning:**
+```
+Episode 1-500:     low demand only
+Episode 501-750:   medium demand only  
+Episode 751-1000:  high demand only
+```
+
+### 2.3 Implementation Details
+
+**Reproducibility:**
+- All hyperparameters specified in `configs/default.yaml`
+- Configuration objects serialized alongside results
+- Multi-seed evaluation (seed ∈ {42, 123, 456})
+
+**Evaluation Metrics:**
+- **Throughput:** vehicles/hour
+- **Safety:** unsafe crossing events per 1000 timesteps
+- **Efficiency:** average vehicle wait time (seconds)
+- **Pedestrian service:** fraction of pedestrians served within 30 seconds
+
+---
+
+## 3. Architecture & Code Organization
 
 ```
-python/
-├── agents/
-│   ├── base.py                  # Abstract BaseAgent protocol
-│   └── ppo_agent.py             # PPO: DualBranchActorCritic, RolloutBuffer
+.
 ├── configs/
-│   ├── config.py                # Typed dataclasses (EnvConfig, PPOConfig, TrainConfig)
-│   └── default.yaml             # YAML override config
-├── environment/
-│   └── intersection_env.py      # Gym-compatible env, SUMO-ready stub
-├── evaluation/
-│   └── evaluator.py             # Baselines + statistical comparison
-├── utils/
-│   └── c_ext.py                 # ctypes wrapper for C shared library
-└── train.py                     # Training engine (TensorBoard, curriculum, SIGINT)
-
-java/
-└── src/main/java/traffic/
-    ├── sensor/
-    │   └── AsyncSensorPipeline.java   # Non-blocking sensor ingestion (BlockingQueue)
-    └── api/
-        └── TrafficControlServer.java  # HTTP REST bridge with safety layer
-
-c/
-└── queue_stats.c                # FIFO queue, Webster delay, CO₂ model, history ring
-
-tests/
-└── python/
-    └── test_ppo_agent.py        # pytest suite: network, buffer, agent, env
+│   ├── config.py                    # Type-safe configuration (dataclasses)
+│   └── default.yaml                 # YAML configuration override
+├── ppo_agent.py                     # PPO implementation (Actor-Critic)
+├── intersection_env.py              # Gym-compatible environment
+├── evaluator.py                     # Baseline comparison & metrics
+├── train.py                         # Training pipeline (curriculum, checkpointing)
+├── test_ppo_agent.py                # Comprehensive test suite (24 tests)
+└── results/                         # Checkpoints and logs
+    └── run_001/
+        ├── checkpoints/
+        │   ├── best.pt              # Best model by eval reward
+        │   └── final.pt             # Final model
+        ├── logs/
+        │   └── run_001.log          # Structured logging
+        └── config.yaml              # Exact config used in this run
 ```
+
+### Core Components
+
+**1. Proximal Policy Optimization Agent** (`ppo_agent.py`)
+- ActorCriticNet: Shared trunk + separate policy/value heads
+- RolloutBuffer: Experience storage with GAE computation
+- Gradient clipping and entropy regularization
+
+**2. Traffic Intersection Environment** (`intersection_env.py`)
+- FIFO lane queuing with realistic vehicle dynamics
+- Pedestrian arrival modeling with safety constraints
+- Action masking for disabled pedestrian crossing
+- Metrics collection (throughput, safety, wait times)
+
+**3. Training Engine** (`train.py`)
+- Episode rollout with curriculum learning
+- Periodic model checkpointing (best by eval reward)
+- TensorBoard logging integration
+- Graceful interrupt handling (SIGINT saves checkpoint)
+
+**4. Evaluation Suite** (`evaluator.py`)
+- Deterministic policy evaluation across demand profiles
+- Baseline comparisons (fixed-time, demand-responsive)
+- Statistical aggregation (mean, std, CI) across seeds
 
 ---
 
-## Quick Start
+## 4. Usage
 
+### Installation
 ```bash
-# 1. Install
 pip install -r requirements.txt
+pytest test_ppo_agent.py -v          # Run test suite (24 tests)
+```
 
-# 2. Compile C extension
-make c                          # → c/queue_stats.so
+### Training
 
-# 3. Run tests
-make test
+**Default (1000 episodes):**
+```bash
+python train.py
+```
 
-# 4. Train
-make train                      # default config, 1000 episodes
+**Quick test (5 episodes):**
+```bash
+python train.py --quick
+```
 
-# 5. Evaluate
-make eval                       # loads best.pt, prints comparison table
+**Custom configuration:**
+```bash
+python train.py --cfg configs/default.yaml --run my_experiment --seed 42
+```
 
-# 6. Java server (optional, for hardware bridge)
-make java && make java-run      # REST API on :8765
+**Resume from checkpoint:**
+```bash
+python train.py --resume results/run_001/checkpoints/best.pt
+```
+
+### Evaluation
+```bash
+python -c "
+import sys; sys.path.insert(0, '.')
+from train import TrafficConfig, Trainer
+from evaluator import Evaluator
+
+cfg = TrafficConfig.from_yaml('configs/default.yaml')
+evaluator = Evaluator(cfg)
+results = evaluator.evaluate(agent)
+print(results)
+"
 ```
 
 ---
 
-## Key Design Decisions
-
-### Pedestrian-Skip via Action Masking
-When `ped_waiting = [False, False, False, False]`, `_build_action_mask()` sets
-`mask[PED_PHASE] = False`, causing the Categorical distribution to assign zero
-probability to PED_CROSSING. This is mathematically cleaner than post-hoc
-action substitution and preserves gradient flow correctly.
-
-### Dual-Branch Actor-Critic
-Pedestrian features (indices 8–15) pass through a separate `PedestrianBranch`
-MLP before being concatenated with the main backbone output. This gives the
-network an explicit inductive bias for pedestrian-specific decision making
-without increasing the number of parameters proportionally.
-
-### GAE + Value Clipping
-Both GAE (`gae_lambda=0.95`) and value loss clipping are enabled by default.
-`target_kl=0.015` provides per-epoch early stopping to prevent policy collapse
-on high-density traffic scenarios.
-
-### SUMO Integration Hook
-Override `_sumo_step()` in `TrafficIntersectionEnv` and set `self._use_sumo = True`.
-The TraCI calls replace only the arrival simulation; reward, observation, and
-metrics remain identical.
-
-### C Extension (ctypes)
-`utils/c_ext.py` wraps `queue_stats.so` via ctypes with explicit `argtypes` /
-`restype` declarations. The struct mirror `CLaneStatsBlock` must match the C
-layout exactly. The `sync_from_env()` method keeps C-side state consistent with
-the Python env on every step.
-
-### Java Async Pipeline
-`AsyncSensorPipeline` uses a `LinkedBlockingQueue` with configurable capacity
-for back-pressure. A `ScheduledExecutorService` emits consolidated `SensorFrame`
-objects at fixed intervals (default 5s). Virtual threads (`Thread.ofVirtual()`)
-are used in `TrafficControlServer` for handler isolation without thread pool
-overhead (requires JDK 21).
-
----
-
-## Extending
-
-### Add a new RL algorithm (e.g. SAC)
-```python
-from agents.base import BaseAgent
-
-class SACAgent(BaseAgent):
-    @property
-    def name(self): return "SAC"
-    def select_action(self, state, ped_waiting, deterministic=False): ...
-    def store_transition(self, ...): ...
-    def update(self, last_value=0.0): ...
-    def buffer_ready(self): ...
-    def save(self, path): ...
-    def load(self, path): ...
-```
-Pass to `Trainer(cfg)` and `Evaluator.full_comparison()` — no other changes needed.
-
-### Add a new demand profile
-```python
-# train.py
-_DEMAND_PROFILES["rush_hour"] = {
-    "arrival_rates": (0.7, 0.6, 0.5, 0.4),
-    "ped_arrival_rate": 0.15,
-}
-```
-
-### Run with SUMO
-```python
-env = TrafficIntersectionEnv(cfg.env)
-env._use_sumo = True
-env._lane_ids = ["edge_N", "edge_S", "edge_E", "edge_W"]
-# Override env._sumo_step() with traci calls
-```
-
----
-
-## Reproducing Paper Results
+## 5. Reproducing Paper Results
 
 ```bash
-python python/train.py \
-    --cfg python/configs/default.yaml \
-    --run paper_main \
-    --seed 42
+# Run 3 seeds to match paper protocol
+for seed in 42 123 456; do
+    python train.py --run paper_seed_$seed --seed $seed
+done
 
-python python/train.py --run paper_seed2 --seed 123
-python python/train.py --run paper_seed3 --seed 456
-
-# Then aggregate:
-python python/evaluation/evaluator.py --checkpoint results/paper_main/checkpoints/best.pt
+# Aggregate results
+python -c "
+import json, pathlib
+results = {}
+for seed in [42, 123, 456]:
+    with open(f'results/paper_seed_{seed}/eval_results.json') as f:
+        results[f'seed_{seed}'] = json.load(f)
+print(json.dumps(results, indent=2))
+" > results/aggregated_results.json
 ```
-
-Results are written to `results/<run>/eval_results.json`.
 
 ---
 
-## Citation
+## 6. Extending
+
+### Adding a new RL algorithm
+```python
+from ppo_agent import PPOAgent
+
+class MyAgent(PPOAgent):  # or subclass BaseAgent
+    def update(self, last_val=0.0):
+        # Your optimization logic here
+        self.net.train()
+        # ... compute losses ...
+        self.loss_history["policy"].append(policy_loss)
+        return {"policy": policy_loss, ...}
+```
+
+### Adding a new demand profile
+```python
+# In train.py
+_DEMAND_PROFILES["custom"] = {
+    "arrival_rates": (0.35, 0.30, 0.25, 0.20),
+    "ped_rate": 0.08,
+}
+# Use: python train.py (curriculum automatically includes custom profile)
+```
+
+### Evaluating on custom environment
+```python
+from intersection_env import TrafficIntersectionEnv
+from config import EnvConfig
+
+env_cfg = EnvConfig(arrival_rates=(0.5, 0.5, 0.3, 0.3), ped_rate=0.1)
+env = TrafficIntersectionEnv(env_cfg, seed=42)
+obs = env.reset()
+# env.step(), env.render(), etc.
+```
+
+---
+
+## 7. Test Suite
+
+Comprehensive pytest coverage (24 tests):
+```bash
+pytest test_ppo_agent.py -v
+
+# Expected output:
+# test_ppo_agent.py::TestPPOAgent::test_select_action PASSED
+# test_ppo_agent.py::TestPPOAgent::test_update PASSED
+# ... [24 tests total]
+```
+
+Tests cover:
+- Agent initialization and save/load
+- Buffer operations and GAE computation
+- Environment dynamics and reward calculation
+- Integration tests (full episode rollout)
+
+---
+
+## 8. References
+
+[1] Schulman, J., Wolski, F., Dhariwal, P., Radford, A., & Klimov, O. (2017).  
+Proximal policy optimization algorithms. *arXiv preprint arXiv:1707.06347*.
+
+[2] Guo, X., Liu, Z., Wang, J., & Qiao, Y. (2019).  
+Adaptive traffic signal control via deep reinforcement learning with discrete proximal policy optimization. *IEEE Transactions on Systems, Man, and Cybernetics: Systems*, 51(1), 19-30.
+
+[3] Brockman, G., Cheung, V., Pettersson, L., Schneider, J., Schulman, J., Tang, J., & Zaremba, W. (2016).  
+OpenAI gym. *arXiv preprint arXiv:1606.01540*.
+
+[4] Mnih, V., Badia, A. P., Mirza, M., Graves, A., Lillicrap, T., Harley, T., ... & Kavukcuoglu, K. (2016).  
+Asynchronous methods for deep reinforcement learning. In *International conference on machine learning* (pp. 1928-1937). PMLR.
+
+[5] Webster, F. V. (1958).  
+Traffic signal settings. *Road Research Technical Paper No. 39*, HMSO, London.
+
+---
+
+## 9. Citation
+
+If you use IntelliSignal in your research, please cite:
 
 ```bibtex
-@misc{intellisignal2025,
-  title   = {Pedestrian-Aware Deep Reinforcement Learning for Adaptive Traffic Signal Control},
-  author  = {Islam, Mamunur and Rastogi, Shreyas and Yadav, Yash and
-             Narayan, Lavish and Patel, Pranav and Rajput, Ayush},
-  year    = {2025},
-  url     = {https://github.com/YOUR_USERNAME/TrafficDRL}
+@article{rastogi2025intelligsignal,
+  title={Pedestrian-Aware Deep Reinforcement Learning for Adaptive Traffic Signal Control},
+  author={Rastogi, Shreyas and Islam, Mamunur and Yadav, Yash and 
+          Narayan, Lavish and Patel, Pranav and Rajput, Ayush},
+  journal={arXiv preprint arXiv:XXXX.XXXXX},
+  year={2025}
 }
 ```
 
 ---
 
 ## License
-MIT
+
+MIT License - See LICENSE file for details.
+
+## Contact
+
+For questions or issues, please open a GitHub issue or contact [contact information].
+

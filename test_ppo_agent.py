@@ -149,7 +149,7 @@ class TestPPOAgent:
             a, lp, v = agent.select_action(dummy_state, ped_waiting)
             agent.store(dummy_state, a, lp, 1.0, v, False)
 
-        assert agent.buffer_ready
+        assert agent.buffer_ready()
         losses = agent.update(last_val=0.0)
 
         assert all(key in losses for key in ("policy", "value", "entropy"))
@@ -333,7 +333,7 @@ class TestPPOAgent:
             a, lp, v = agent.select_action(dummy_state, ped)
             agent.store(dummy_state, a, lp, 1.0, v, False)
 
-        assert agent.buffer_ready
+        assert agent.buffer_ready()
         losses = agent.update(last_val=0.0)
 
         for key in ("policy", "value", "entropy"):

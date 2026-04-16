@@ -1,20 +1,26 @@
 """
-train.py
---------
-Production training engine.
+train.py: Adaptive Traffic Signal Control via Proximal Policy Optimization
+============================================================================
 
-Features:
-  - TensorBoard scalar logging every N steps
-  - Curriculum learning (low → medium → high demand)
-  - Best-model checkpointing by eval reward
-  - Graceful SIGINT handling (saves checkpoint on Ctrl+C)
-  - Config saved alongside each run for reproducibility
-  - Structured logging to file + stdout
+Implements the training pipeline for PPO-based traffic signal controller.
+Supports curriculum learning, multi-demand evaluation, and checkpoint recovery.
+
+Methodology:
+  * Curriculum Learning: Progressive difficulty (low -> medium -> high demand)
+  * Experience Replay: Rollout buffer with generalized advantage estimation (GAE)
+  * Model Checkpointing: Save best-performing policies based on evaluation reward
+  * Reproducibility: Full configuration saved with each experiment
+  * Graceful Recovery: SIGINT handling to save state before termination
 
 Usage:
-    python train.py                              # defaults
-    python train.py --cfg configs/run_02.yaml   # custom YAML
-    python train.py --resume results/run_001/checkpoints/best.pt
+    python train.py                              # Default configuration
+    python train.py --cfg configs/default.yaml  # Custom YAML config
+    python train.py --resume results/run_001/checkpoints/best.pt  # Resume training
+    python train.py --quick                     # Quick test (5 episodes)
+
+References:
+  [1] Schulman et al. (2017). Proximal Policy Optimization Algorithms.
+  [2] Mnih et al. (2016). Asynchronous Methods for Deep RL.
 """
 
 from __future__ import annotations
@@ -60,9 +66,9 @@ logger = logging.getLogger(__name__)
 # ── Curriculum ────────────────────────────────────────────────────────────────
 
 _DEMAND_PROFILES: Dict[str, Dict[str, float]] = {
-    "low":    {"arrival_rates": (0.15, 0.15, 0.10, 0.10), "ped_arrival_rate": 0.02},
-    "medium": {"arrival_rates": (0.30, 0.30, 0.20, 0.20), "ped_arrival_rate": 0.05},
-    "high":   {"arrival_rates": (0.50, 0.45, 0.35, 0.30), "ped_arrival_rate": 0.10},
+    "low":    {"arrival_rates": (0.15, 0.15, 0.10, 0.10), "ped_rate": 0.02},
+    "medium": {"arrival_rates": (0.30, 0.30, 0.20, 0.20), "ped_rate": 0.05},
+    "high":   {"arrival_rates": (0.50, 0.45, 0.35, 0.30), "ped_rate": 0.10},
 }
 
 
@@ -153,7 +159,7 @@ class Trainer:
         ep_rewards: List[float] = []
 
         logger.info("=" * 70)
-        logger.info(f"  IntelliSignal PPO Training — run: {cfg.train.run_name}")
+        logger.info(f"  IntelliSignal PPO Training - run: {cfg.train.run_name}")
         logger.info(f"  Episodes:   {cfg.train.total_episodes}")
         logger.info(f"  Steps/ep:   {cfg.train.steps_per_episode}")
         logger.info(f"  Device:     {self.agent.device}")
@@ -182,15 +188,15 @@ class Trainer:
                     f"demand={demand:<6}  "
                     f"reward={np.mean(recent):+8.2f}  "
                     f"throughput={m['throughput']:5.0f}  "
-                    f"ped_unsafe={m['ped_unsafe_events']:4.0f}  "
+                    f"ped_unsafe={m['ped_unsafe']:4.0f}  "
                     f"elapsed={elapsed:6.0f}s"
                 )
 
                 self.tb.scalar("train/mean_reward",     np.mean(recent), episode)
                 self.tb.scalar("train/throughput",      m["throughput"],  episode)
-                self.tb.scalar("train/ped_unsafe",      m["ped_unsafe_events"], episode)
+                self.tb.scalar("train/ped_unsafe",      m["ped_unsafe"], episode)
                 self.tb.scalar("train/avg_vehicle_wait",m["avg_vehicle_wait_s"], episode)
-                self.tb.scalar("train/entropy_coef",    self.agent._entropy_coef, episode)
+                self.tb.scalar("train/entropy_coef",    self.agent.entropy_coef, episode)
 
                 if self.agent.loss_history["policy"]:
                     self.tb.scalars("train/losses", {
@@ -213,7 +219,7 @@ class Trainer:
                     self._best_eval_reward = mean_rew
                     best_path = cfg.train.checkpoint_dir / "best.pt"
                     self.agent.save(best_path)
-                    logger.info(f"  ★ New best model saved (reward={mean_rew:.2f})")
+                    logger.info(f"  * New best model saved (reward={mean_rew:.2f})")
 
             # ── Periodic checkpoint ───────────────────────────────────────────
             if episode % cfg.train.checkpoint_every_n == 0:
@@ -257,6 +263,13 @@ class Trainer:
                 )
                 losses = self.agent.update(last_value)
 
+        # Update at end of episode
+        if self.agent.buffer.ptr > 0:  # If we have any transitions
+            _, _, last_value = self.agent.select_action(
+                obs, env.ped_waiting, deterministic=False
+            )
+            losses = self.agent.update(last_value)
+
         return ep_reward
 
 
@@ -275,6 +288,8 @@ def parse_args() -> argparse.Namespace:
                         help="Override run name")
     parser.add_argument("--seed",   type=int, default=None,
                         help="Override random seed")
+    parser.add_argument("--quick",  action="store_true",
+                        help="Quick test run with only 5 episodes")
     return parser.parse_args()
 
 
@@ -286,6 +301,8 @@ def main() -> None:
         cfg.train.run_name = args.run
     if args.seed is not None:
         cfg.train.seed = args.seed
+    if args.quick:
+        cfg.train.total_episodes = 5
 
     trainer = Trainer(cfg)
     trainer.train(resume_path=args.resume)

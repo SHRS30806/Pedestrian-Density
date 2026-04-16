@@ -192,7 +192,7 @@ def train(
             obs, r, _, _ = env.step(a)
             agent.store(obs, a, lp, r, v, False)
             ep_r += r
-            if agent.buffer_ready:
+            if agent.buffer_ready():
                 _, _, lv = agent.select_action(obs, env.ped_waiting)
                 agent.update(lv)
 

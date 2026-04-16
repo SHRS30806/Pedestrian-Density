@@ -1,8 +1,27 @@
-"""
-agents/ppo_agent.py
-====================
-PPO for 3-action traffic signal control (NS=0, EW=1, PED=2).
-PED_CROSSING is action-masked when no pedestrians are waiting.
+"""Proximal Policy Optimization Agent for Adaptive Traffic Signal Control
+
+Mathematical Framework:
+  - Actor-Critic architecture with shared feature extraction
+  - Generalized Advantage Estimation (GAE) for variance reduction
+  - Clipped policy gradient for trust region optimization
+  - Entropy regularization for exploration-exploitation balance
+
+Action Space (3 actions):
+  0: NS_GREEN - North/South lanes green light
+  1: EW_GREEN - East/West lanes green light
+  2: PED_CROSSING - Pedestrian crossing (action-masked when no pedestrians)
+
+Implementation Details:
+  - Rollout buffer with capacity for experience replay
+  - Multi-epoch training with mini-batch gradient updates
+  - Automatic entropy coefficient decay
+  - Gradient clipping for stability
+
+References:
+  [1] Schulman et al. (2017). Proximal Policy Optimization Algorithms.
+      arXiv:1707.06347
+  [2] Mnih et al. (2016). Asynchronous Methods for Deep Reinforcement Learning.
+      International Conference on Machine Learning (ICML).
 """
 
 from __future__ import annotations
@@ -16,6 +35,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
+
+from config import PPOConfig
 
 logger = logging.getLogger(__name__)
 
@@ -125,12 +146,33 @@ class RolloutBuffer:
 class PPOAgent:
     def __init__(
         self,
-        obs_dim=24, action_dim=3,
+        obs_dim=24,
+        action_dim: int = 3,
         lr=3e-4, gamma=0.99, gae_lam=0.95,
         clip_eps=0.2, n_epochs=6, batch_size=64,
         buffer_size=256, entropy_coef=0.05,
         value_coef=0.5, max_grad=0.5, device="auto",
     ):
+        if isinstance(obs_dim, PPOConfig):
+            cfg = obs_dim
+            obs_dim = 24
+            action_dim = cfg.action_dim
+            lr = cfg.lr
+            gamma = cfg.gamma
+            gae_lam = cfg.gae_lambda
+            clip_eps = cfg.clip_epsilon
+            n_epochs = cfg.n_epochs
+            batch_size = cfg.batch_size
+            buffer_size = cfg.buffer_size
+            entropy_coef = cfg.entropy_coef
+            value_coef = cfg.value_coef
+            max_grad = cfg.max_grad_norm
+            device = cfg.device
+            self.cfg = cfg
+        else:
+            obs_dim = int(obs_dim)
+            self.cfg = None
+
         self.gamma=gamma; self.gae_lam=gae_lam; self.clip_eps=clip_eps
         self.n_epochs=n_epochs; self.batch_size=batch_size
         self.entropy_coef=entropy_coef; self.value_coef=value_coef
@@ -144,11 +186,18 @@ class PPOAgent:
         self.optim  = torch.optim.Adam(self.net.parameters(), lr=lr, eps=1e-5)
         self.buffer = RolloutBuffer(buffer_size, obs_dim)
 
-        self.n_updates = 0; self.total_steps = 0
+        self.n_updates = 0; self.total_steps = 0; self._step = 0
         self.episode_rewards: list = []
+
+        self.loss_history = {"policy": [], "value": [], "entropy": []}
 
         n = sum(p.numel() for p in self.net.parameters() if p.requires_grad)
         logger.info(f"PPOAgent | {self.device} | params={n:,}")
+
+    @property
+    def name(self) -> str:
+        """Algorithm name for evaluation."""
+        return "PPO"
 
     def select_action(self, state, ped_waiting, deterministic=False):
         x    = torch.as_tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -163,10 +212,14 @@ class PPOAgent:
             lp     = dist.log_prob(action)
 
         self.total_steps += 1
+        self._step += 1
         return int(action.item()), float(lp.item()), float(value.item())
 
     def store(self, s, a, lp, r, v, done):
         self.buffer.push(s, a, lp, r, v, done)
+
+    def store_transition(self, state, action, reward, next_state, done, log_prob, value):
+        self.store(state, action, log_prob, reward, value, done)
 
     def update(self, last_val=0.0):
         self.buffer.compute_gae(last_val, self.gamma, self.gae_lam)
@@ -190,20 +243,37 @@ class PPOAgent:
                 self.optim.step()
                 pl+=ploss.item(); vl+=vloss.item(); en+=entropy.item(); nb+=1
         self.buffer.reset(); self.net.eval(); self.n_updates += 1
-        return {"policy": pl/max(nb,1), "value": vl/max(nb,1), "entropy": en/max(nb,1)}
+        losses = {"policy": pl/max(nb,1), "value": vl/max(nb,1), "entropy": en/max(nb,1)}
+        
+        # Update loss history
+        for key, value in losses.items():
+            self.loss_history[key].append(value)
+        
+        return losses
 
-    @property
-    def buffer_ready(self): return self.buffer.full
+    def buffer_ready(self):
+        return self.buffer.full
 
     def save(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        torch.save({"net": self.net.state_dict(), "optim": self.optim.state_dict(),
-                    "updates": self.n_updates, "steps": self.total_steps}, path)
+        payload = {
+            "net": self.net.state_dict(),
+            "optim": self.optim.state_dict(),
+            "updates": self.n_updates,
+            "steps": self.total_steps,
+            "step": self._step,
+            "loss_history": self.loss_history,
+        }
+        if self.cfg is not None:
+            payload["cfg"] = self.cfg
+        torch.save(payload, path)
 
     def load(self, path):
         ck = torch.load(path, map_location=self.device, weights_only=False)
         self.net.load_state_dict(ck["net"]); self.optim.load_state_dict(ck["optim"])
         self.n_updates=ck.get("updates",0); self.total_steps=ck.get("steps",0)
+        self._step=ck.get("step", 0)
+        self.loss_history=ck.get("loss_history", {"policy": [], "value": [], "entropy": []})
 
     @property
     def n_parameters(self):

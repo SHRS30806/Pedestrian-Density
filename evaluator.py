@@ -100,9 +100,9 @@ class Evaluator:
     DEMANDS = ["low", "medium", "high"]
 
     _DEMAND_PROFILES: Dict[str, Dict[str, Any]] = {
-        "low":    {"arrival_rates": (0.15, 0.15, 0.10, 0.10), "ped_arrival_rate": 0.02},
-        "medium": {"arrival_rates": (0.30, 0.30, 0.20, 0.20), "ped_arrival_rate": 0.05},
-        "high":   {"arrival_rates": (0.50, 0.45, 0.35, 0.30), "ped_arrival_rate": 0.10},
+        "low":    {"arrival_rates": (0.15, 0.15, 0.10, 0.10), "ped_rate": 0.02},
+        "medium": {"arrival_rates": (0.30, 0.30, 0.20, 0.20), "ped_rate": 0.05},
+        "high":   {"arrival_rates": (0.50, 0.45, 0.35, 0.30), "ped_rate": 0.10},
     }
 
     def __init__(self, cfg: TrafficConfig) -> None:
@@ -202,9 +202,9 @@ class Evaluator:
             out["reward"].append(ep_reward)
             out["throughput"].append(float(m.total_throughput))
             out["ped_unsafe"].append(float(m.ped_unsafe_events))
-            out["vehicle_wait"].append(m.avg_vehicle_wait)
-            out["ped_wait"].append(m.avg_ped_wait)
-            out["unnecessary_ped"].append(float(m.unnecessary_ped_phases))
+            out["vehicle_wait"].append(m.avg_vehicle_wait_s)
+            out["ped_wait"].append(m.avg_ped_wait_s)
+            out["unnecessary_ped"].append(float(m.forced_ped_phases))
 
         return out
 
@@ -238,8 +238,8 @@ class Evaluator:
                 "reward":       ep_reward,
                 "throughput":   float(m.total_throughput),
                 "ped_unsafe":   float(m.ped_unsafe_events),
-                "vehicle_wait": m.avg_vehicle_wait,
-                "ped_wait":     m.avg_ped_wait,
+                "vehicle_wait": m.avg_vehicle_wait_s,
+                "ped_wait":     m.avg_ped_wait_s,
             })
         return records
 

@@ -1,39 +1,44 @@
-"""
-environment/intersection_env.py
-================================
-4-way signalised intersection for Deep RL research.
+"""Adaptive Traffic Intersection Environment for Signal Control Research
 
-All bugs fixed:
-  1. avg_vehicle_wait_s now includes ALL vehicles currently waiting,
-     not just ones that were served. Computed as a snapshot each step.
-  2. Reward penalises NS and EW pressure in proportion to how long
-     they have been neglected — agent MUST serve both directions.
-  3. 3-action space removes ALL_RED collapse. Clearance inserted automatically.
-  4. Arrival rates balanced so NS and EW are comparably loaded.
+A Gym-compatible environment for studying deep reinforcement learning
+approaches to traffic signal control. Simulates a 4-way signalized
+intersection with vehicle and pedestrian traffic.
 
-OBSERVATION (24-dim, all in [0, 1]):
-  [0:4]   Queue lengths per lane
-  [4:8]   Wait times per lane (snapshot: current wait of waiting vehicles)
-  [8:12]  Pedestrian presence per crosswalk (binary)
-  [12:16] Pedestrian wait times
-  [16:19] Current phase one-hot (3 phases: NS/EW/PED)
-  [19]    Phase elapsed fraction
-  [20]    NS total pressure (normalised)
-  [21]    EW total pressure (normalised)
-  [22]    Pedestrian urgency (binary: any ped wait > 25s)
-  [23]    In clearance step (binary)
+Environment Dynamics:
+  - First-in-first-out (FIFO) vehicle queuing per lane
+  - Pedestrian arrival modeling with safety constraints
+  - 5-second signal phases with automatic clearance intervals
+  - Realistic demand patterns (low/medium/high traffic)
 
-ACTION SPACE (3 discrete):
-  0 = NS_GREEN     — North + South lanes go
-  1 = EW_GREEN     — East + West lanes go
-  2 = PED_CROSSING — Pedestrians cross (masked when no peds waiting)
+Observation Space (24-dimensional, all in [0, 1]):
+  [0:4]   Normalized queue lengths (vehicles per lane)
+  [4:8]   Vehicle wait times (seconds, snapshot per lane)
+  [8:12]  Pedestrian presence per crosswalk (binary indicators)
+  [12:16] Pedestrian wait times (seconds)
+  [16:19] Current phase (one-hot encoding: NS/EW/PED)
+  [19]    Phase elapsed (fraction of phase duration)
+  [20:22] Directional pressure metrics (NS and EW)
+  [22]    Pedestrian urgency (boolean: any ped wait > 25s)
+  [23]    Clearance state (boolean: in automatic clearance interval)
 
-REWARD (what the agent is trying to maximise):
-  +  clearing bonus: pressure eliminated this step
-  -  neglect penalty: pressure in the direction NOT being served
-  +  ped_served bonus
-  -  ped_unsafe penalty
-  -  switch penalty (small, prevents rapid oscillation)
+Action Space (3 discrete actions):
+  0: NS_GREEN - Service North/South lanes
+  1: EW_GREEN - Service East/West lanes
+  2: PED_CROSSING - Pedestrian crossing phase (action-masked when empty)
+
+Reward Function:
+  R(s,a) = w_clearing * phase_clearance_bonus
+           - w_neglect * directional_neglect_penalty
+           + w_ped_served * pedestrians_cleared
+           - w_ped_unsafe * unsafe_crossing_events
+           - w_switch * phase_switch_penalty
+
+References:
+  [1] Guo et al. (2019). Adaptive Traffic Signal Control via Deep RL.
+      IEEE Transactions on Systems, Man, and Cybernetics.
+  [2] Brockman et al. (2016). OpenAI Gym. arXiv:1606.01540
+  [3] Webster, F. V. (1958). Traffic signal settings. Road Research
+      Technical Paper No. 39.
 """
 
 from __future__ import annotations
