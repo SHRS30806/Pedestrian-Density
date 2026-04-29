@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+*.dll
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Project-specific
+results/
+python/results/
+checkpoints/
+logs/
+runs/
+*.pt
+*.pth
+*.ckpt
+configs/local/
+data/
+output/
+
+# Personal / OS
+.DS_Store
+.vscode/
+.idea/
+*.code-workspace
+Thumbs.db
+
+# Overleaf / LaTeX
+*.tex
+*.bib
+OVERLEAF_README.md
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.pdf
