@@ -282,7 +282,7 @@ def print_table(results: Dict) -> None:
     print("=" * 100)
 
     for key, label, lower_better in METRICS:
-        print(f"\n  {label}  ({'↓' if lower_better else '↑'})")
+        print(f"\n  {label}  ({'[LOWER is better]' if lower_better else '[HIGHER is better]'})")
         print(f"  {'Method':<22}" + "".join(f"  {d:<16}" for d in demands))
         print(f"  {'-'*22}" + "".join(f"  {'-'*16}" for _ in demands))
 
@@ -329,8 +329,8 @@ def print_abstract_numbers(results: Dict) -> None:
                 print(f"    {demand:<8}: baseline ≈ 0")
                 continue
             pct = (base - ours) / base * 100 if lower else (ours - base) / base * 100
-            arrow = "↓" if lower else "↑"
-            print(f"    {demand:<8}: {arrow} {abs(pct):.1f}%  ({base:.1f} → {ours:.1f})")
+            arrow = "decrease" if lower else "increase"
+            print(f"    {demand:<8}: {arrow} {abs(pct):.1f}%  ({base:.1f} -> {ours:.1f})")
 
     print("─" * 65)
 
