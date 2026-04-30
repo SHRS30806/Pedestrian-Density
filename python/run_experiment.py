@@ -278,7 +278,7 @@ def print_table(results: Dict) -> None:
 
     print()
     print("=" * 100)
-    print("  TABLE II — Performance Comparison  (★ = best per column)")
+    print("  TABLE II — Performance Comparison  (* = best per column)")
     print("=" * 100)
 
     for key, label, lower_better in METRICS:
@@ -296,11 +296,11 @@ def print_table(results: Dict) -> None:
             for d in demands:
                 val = results[method][d].get(key, 0)
                 std = results[method][d].get(f"{key}_std", 0)
-                star = "★" if abs(val - best[d]) < 0.5 else " "
+                star = "*" if abs(val - best[d]) < 0.5 else " "
                 row += f"  {val:6.1f}±{std:4.1f}{star}   "
             print(row)
 
-    print("\n  ★ = best result for that demand level")
+    print("\n  * = best result for that demand level")
     print("=" * 100)
 
 
