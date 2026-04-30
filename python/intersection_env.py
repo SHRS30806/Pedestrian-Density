@@ -357,7 +357,8 @@ class TrafficIntersectionEnv:
         ped_term    = cfg.w_ped_ok * peds - cfg.w_ped_bad * unsafe
         switch_term = -cfg.w_switch if switched else 0.0
 
-        return clear_term + neglect_term + ped_term + switch_term
+        base_reward = 100.0
+        return base_reward + clear_term + neglect_term + ped_term + switch_term
 
     def _observe(self) -> np.ndarray:
         cfg = self.cfg

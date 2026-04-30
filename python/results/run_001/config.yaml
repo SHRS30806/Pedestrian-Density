@@ -1,0 +1,85 @@
+env:
+  arrival_rate_ew: 0.28
+  arrival_rate_ns: 0.35
+  arrival_rates:
+  - 0.3
+  - 0.3
+  - 0.2
+  - 0.2
+  max_ped_wait_s: 90.0
+  max_queue: 30.0
+  max_wait_s: 120.0
+  min_green_steps: 3
+  n_crosswalks: 4
+  n_lanes: 4
+  obs_state_dim: 24
+  ped_force_s: 45.0
+  ped_rate: 0.06
+  phase_max_dur:
+  - 60
+  - 60
+  - 30
+  - 8
+  phase_min_dur:
+  - 10
+  - 10
+  - 15
+  - 3
+  sat_flow_vph: 1500.0
+  saturation_flow_vph: 1800.0
+  step_duration_s: 5.0
+  step_s: 5.0
+  w_clear: 3.0
+  w_neglect: 2.0
+  w_ped_bad: 10.0
+  w_ped_ok: 5.0
+  w_ped_served: 3.0
+  w_ped_unsafe: 10.0
+  w_switch: 0.3
+  w_throughput: 1.0
+  w_unnecessary_ped: 2.0
+  w_wait_penalty: 0.05
+ppo:
+  action_dim: 3
+  batch_size: 64
+  buffer_size: 2048
+  clip_epsilon: 0.2
+  clip_value_loss: true
+  device: auto
+  entropy_coef: 0.01
+  entropy_decay: 0.995
+  gae_lambda: 0.95
+  gamma: 0.99
+  hidden_dims:
+  - 256
+  - 128
+  - 64
+  lr: 0.0003
+  lr_schedule: cosine
+  max_grad_norm: 0.5
+  n_epochs: 10
+  normalize_advantages: true
+  ped_branch_dims:
+  - 64
+  - 32
+  target_kl: 0.015
+  value_coef: 0.5
+train:
+  checkpoint_every_n: 100
+  curriculum: true
+  curriculum_stages:
+  - - 200
+    - low
+  - - 600
+    - medium
+  - - 1000
+    - high
+  eval_episodes: 5
+  eval_every_n: 10
+  log_dir: results/logs
+  log_interval: 5
+  output_dir: results
+  run_name: run_001
+  seed: 42
+  steps_per_episode: 100
+  total_episodes: 100

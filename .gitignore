@@ -17,9 +17,7 @@ env.bak/
 venv.bak/
 
 # Project-specific
-results/
-python/results/
-checkpoints/
+python/checkpoints/
 logs/
 runs/
 *.pt
@@ -50,3 +48,4 @@ OVERLEAF_README.md
 *.fdb_latexmk
 *.synctex.gz
 *.pdf
+
