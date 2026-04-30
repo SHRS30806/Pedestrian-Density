@@ -5,62 +5,59 @@
 
 ## Abstract
 
-We present a deep reinforcement learning framework for adaptive traffic signal control that explicitly optimizes for pedestrian safety while maintaining vehicle throughput. Our approach utilizes Proximal Policy Optimization (PPO) with an Actor-Critic architecture extended to handle multi-modal objectives (vehicle efficiency, pedestrian safety, and signal coordination). The agent is trained using curriculum learning to generalize across varying traffic demand levels.
+This project uses deep reinforcement learning (DRL) to control traffic lights. Most traffic AI models only focus on moving cars quickly, which can be dangerous for pedestrians. Our model uses Proximal Policy Optimization (PPO) to balance vehicle throughput with pedestrian safety. We also use curriculum learning to train the agent on different traffic volumes.
 
 ---
 
 ## 1. Introduction
 
-Adaptive traffic signal control (ATSC) is a critical urban infrastructure problem affecting congestion, emissions, and safety. While Deep Reinforcement Learning has shown promise for traffic optimization, existing approaches often neglect pedestrian safety or lack explicit curriculum learning for scaling across demands.
+Traffic signal control is an important part of urban infrastructure. Traditional systems run on fixed timers or simple sensors, which struggle during heavy traffic. While reinforcement learning works well for this, many researchers ignore crosswalks.
 
-This research addresses these limitations through:
-- A pedestrian-aware reward design with explicit safety constraints.
-- Curriculum learning that progressively increases traffic demand.
-- A fully reproducible evaluation framework for comparing baseline methods.
+This project attempts to fix this by:
+- Adding specific safety constraints for pedestrians in the reward function.
+- Using curriculum learning to step up the traffic density during training.
+- Comparing our PPO model against fixed-time and actuated signal baselines.
 
 ---
 
 ## 2. Model Architecture
 
-The framework relies on a multi-objective reinforcement learning pipeline modeled as a Markov Decision Process (MDP).
+The environment is built as a Markov Decision Process (MDP).
 
 ### State Representation
-The intersection environment captures a 24-dimensional normalized state vector:
-- Vehicle queue lengths and wait times across all approaching lanes.
-- Pedestrian presence and waiting durations at crosswalks.
-- The current active signal phase and elapsed phase time.
+The intersection returns a 24-dimensional array:
+- Number of cars queued and their waiting times.
+- Whether pedestrians are waiting at the crosswalk.
+- The current green light phase and how long it has been green.
 
 ### Reward Function
-The reward mechanism balances vehicle throughput and pedestrian safety:
-- **Pressure cleared:** Rewards the clearing of queued vehicles.
-- **Unsafe Events penalty:** Heavily penalizes signal changes that compromise crossing pedestrians.
-- **Pedestrian Served bonus:** Provides a sparse reward for safely completing pedestrian crossings.
+The reward math tries to maximize throughput while preventing unsafe crossings:
+- **Pressure cleared:** Points given for clearing long vehicle queues.
+- **Unsafe Events penalty:** Heavy point deductions if the light turns green for cars while pedestrians are crossing.
+- **Pedestrian Served:** Points given for safely clearing a crosswalk.
 
 ### Learning Method (PPO)
-- The agent employs an **Actor-Critic** architecture with shared feature extraction layers and separate policy and value heads.
-- A dedicated pedestrian-aware network branch processes safety-critical features independently to prevent feature dilution.
-- **Curriculum Learning Pipeline:**
-  - Episodes 1-500: Low traffic demand
-  - Episodes 501-750: Medium traffic demand
-  - Episodes 751-1000: High traffic demand
+- We use an **Actor-Critic** setup.
+- The neural network has a separate branch just for pedestrian data so it doesn't get ignored by the larger vehicle numbers.
+- **Curriculum Training:**
+  - Episodes 1-500: Low traffic
+  - Episodes 501-750: Medium traffic
+  - Episodes 751-1000: High traffic
 
 ---
 
 ## 3. Training the Model
 
-The training process leverages curriculum learning to progressively expose the agent to higher traffic densities.
+To train the PPO model from scratch, open your terminal and run:
 
-### Standard Training
-To train the PPO model from scratch:
 ```bash
 cd python
 python train.py --cfg configs/default.yaml
 ```
 
-The training script outputs checkpoints and logs into the `results/` directory. Training progress, including the **training curve** (reward over time, policy loss, and value loss), is logged and can be plotted to visualize the convergence and stability of the model.
+The script will save the model weights and training logs into the `results/` folder. 
 
-### Quick Verification
-To verify the environment and training loop function correctly:
+To run a fast test just to check if your Python environment is set up correctly:
 ```bash
 cd python
 python train.py --quick
@@ -70,48 +67,43 @@ python train.py --quick
 
 ## 4. Results & Comparison
 
-A core component of this research is demonstrating the benefits of the proposed PPO-based method over alternative approaches.
-
-### Baseline Comparisons
-The framework compares the trained PPO agent against traditional and alternative RL baselines:
-- **Fixed-Time Control:** Traditional static phase rotation.
-- **DQN Agent:** Deep Q-Network baseline to demonstrate the advantages of policy gradient methods in highly stochastic environments.
+We test our PPO agent against two standard traffic systems:
+- **Fixed-Time Control:** A simple repeating timer.
+- **Actuated:** A sensor-based system that changes lights based on queue limits.
 
 ### Running the Evaluations
-To evaluate a trained checkpoint and generate the quantitative results (throughput vs. safety metrics):
+To run the evaluation script and print the performance metrics (throughput vs. wait times):
 ```bash
 cd python
 python run_experiment.py
 ```
-This orchestration script runs the multi-seed evaluation, tests the trained policy against baselines across varying demand profiles, and aggregates the results for statistical comparison.
+This tests the model on 3 different traffic demands (Low, Medium, High).
 
-### Generating Training Curves and Plots
-To visualize the training curve and comparative performance:
+### Generating Plots
+To create the PNG and PDF charts for the paper:
 ```bash
 cd python
 python plot_results.py
 ```
-These plots illustrate the algorithm's convergence and explicitly show the trade-off improvements in vehicle throughput versus pedestrian safety constraints.
+This will output the convergence graphs and phase distribution charts into the `python/results/figures` folder.
 
 ---
 
 ## 5. File Structure
 
-The repository is structured to support the RL training pipeline and experimentation:
-
 ```
 .
 ├── python/                     
-│   ├── configs/                # Hyperparameter configurations (default.yaml)
-│   ├── ppo_agent.py            # Core Actor-Critic PPO architecture
-│   ├── dqn_agent.py            # DQN baseline implementation
-│   ├── intersection_env.py     # Intersection environment and state representation
-│   ├── train.py                # Model training and curriculum orchestration
-│   ├── run_experiment.py       # Baseline comparison and statistical evaluation
-│   ├── evaluator.py            # Metric calculation and validation
-│   └── plot_results.py         # Generation of training curves and comparison charts
-├── tests/python/               # Unit testing for RL components
-├── c/                          # High-performance C extensions for queue mechanics
+│   ├── configs/                # Configuration parameters (default.yaml)
+│   ├── ppo_agent.py            # The PPO math and neural network
+│   ├── dqn_agent.py            # DQN baseline
+│   ├── intersection_env.py     # The traffic simulation math
+│   ├── train.py                # Main training loop
+│   ├── run_experiment.py       # Evaluation and testing script
+│   ├── evaluator.py            # Metric calculations
+│   └── plot_results.py         # Graph generation script
+├── tests/python/               # Unit tests
+├── c/                          # C extensions for faster simulation speed
 │   └── queue_stats.c           
-└── results/                    # Generated output folder for runs (checkpoints, logs)
+└── results/                    # Output folder (logs, graphs, weights)
 ```
