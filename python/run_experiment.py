@@ -309,9 +309,9 @@ def print_abstract_numbers(results: Dict) -> None:
         return
 
     print()
-    print("─" * 65)
+    print("-" * 65)
     print("  KEY IMPROVEMENTS vs FIXED-TIME (for your abstract)")
-    print("─" * 65)
+    print("-" * 65)
 
     COMPARE = [
         ("avg_vehicle_wait_s",  "Vehicle wait time",    True),
@@ -326,19 +326,19 @@ def print_abstract_numbers(results: Dict) -> None:
             ours = results["DRL-PA (Ours)"][demand].get(key, 0)
             base = results["Fixed-Time"][demand].get(key, 0)
             if base < 0.01:
-                print(f"    {demand:<8}: baseline ≈ 0")
+                print(f"    {demand:<8}: baseline ~ 0")
                 continue
             pct = (base - ours) / base * 100 if lower else (ours - base) / base * 100
             arrow = "decrease" if lower else "increase"
             print(f"    {demand:<8}: {arrow} {abs(pct):.1f}%  ({base:.1f} -> {ours:.1f})")
 
-    print("─" * 65)
+    print("-" * 65)
 
 
 def print_phase_distribution(results: Dict) -> None:
     methods = list(results.keys())
     print()
-    print("  PHASE DISTRIBUTION — Medium Demand (% of steps)")
+    print("  PHASE DISTRIBUTION - Medium Demand (% of steps)")
     print(f"  {'Method':<22} {'NS%':>7} {'EW%':>7} {'PED%':>7}")
     print(f"  {'-'*22} {'-'*7} {'-'*7} {'-'*7}")
     for m in methods:
