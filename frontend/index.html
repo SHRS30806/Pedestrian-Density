@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRL Traffic Control Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="glass-panel">
+        <h1>Pedestrian-Aware Deep Reinforcement Learning for Adaptive Traffic Signal Control</h1>
+        <p>Integrating Real-Time Computer Vision with Proximal Policy Optimization</p>
+    </header>
+
+    <main class="dashboard-grid">
+        <!-- Left Panel: Computer Vision Feed -->
+        <section class="panel glass-panel vision-panel">
+            <div class="panel-header">
+                <h2><span class="pulse"></span> Live CV Feed</h2>
+                <span class="badge">YOLOv8 Simulation</span>
+            </div>
+            <div class="cv-container">
+                <canvas id="cv-canvas" width="300" height="300"></canvas>
+                <div class="cv-overlay">
+                    <p>Detecting Entities...</p>
+                    <ul id="detection-list">
+                        <li>Vehicles: <span id="cv-vehicles">0</span></li>
+                        <li>Pedestrians: <span id="cv-peds">0</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="state-vector">
+                <h3>State Vector Extracted</h3>
+                <div class="matrix" id="state-matrix">
+                    [ 0.00, 0.00, 0.00, 0.00 ... ]
+                </div>
+            </div>
+        </section>
+
+        <!-- Center Panel: The Environment -->
+        <section class="panel glass-panel env-panel">
+            <div class="panel-header">
+                <h2>Traffic Environment (MDP)</h2>
+                <div class="controls">
+                    <label>Demand:</label>
+                    <select id="demand-selector">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+            </div>
+            <div class="canvas-wrapper">
+                <canvas id="intersection-canvas" width="600" height="600"></canvas>
+                <!-- Signal Indicators -->
+                <div id="signal-ns" class="signal top-signal red"></div>
+                <div id="signal-ew" class="signal left-signal green"></div>
+                <div id="signal-ped" class="signal ped-signal red">🚶</div>
+            </div>
+            <div class="metrics-bar">
+                <div class="metric">
+                    <span>Reward (R<sub>t</sub>)</span>
+                    <strong id="reward-val" class="highlight">+0.0</strong>
+                </div>
+                <div class="metric">
+                    <span>Pressure</span>
+                    <strong id="pressure-val">0.0</strong>
+                </div>
+                <div class="metric">
+                    <span>Unsafe Events</span>
+                    <strong id="unsafe-val" class="danger">0</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: PPO Neural Network -->
+        <section class="panel glass-panel ppo-panel">
+            <div class="panel-header">
+                <h2>Actor-Critic (PPO)</h2>
+                <span class="badge">Inference</span>
+            </div>
+            
+            <div class="network-viz">
+                <div class="layer input">State 24D</div>
+                <div class="synapses"></div>
+                <div class="layer hidden">Dense 256</div>
+                <div class="synapses"></div>
+                <div class="layer hidden">Dense 256</div>
+                <div class="synapses"></div>
+                <div class="output-heads">
+                    <div class="head actor">
+                        <h3>Actor (Policy π)</h3>
+                        <div class="prob-bar">
+                            <label>NS Green</label>
+                            <div class="bar-bg"><div class="bar-fill" id="prob-ns" style="width: 10%;"></div></div>
+                            <span id="txt-ns">10%</span>
+                        </div>
+                        <div class="prob-bar">
+                            <label>EW Green</label>
+                            <div class="bar-bg"><div class="bar-fill" id="prob-ew" style="width: 80%;"></div></div>
+                            <span id="txt-ew">80%</span>
+                        </div>
+                        <div class="prob-bar">
+                            <label>Ped Crossing</label>
+                            <div class="bar-bg"><div class="bar-fill" id="prob-ped" style="width: 10%;"></div></div>
+                            <span id="txt-ped">10%</span>
+                        </div>
+                    </div>
+                    <div class="head critic">
+                        <h3>Critic (Value V)</h3>
+                        <div class="value-display">
+                            <span class="value-text" id="critic-val">84.2</span>
+                            <span class="value-label">Expected Return</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-masking">
+                <h3>Safety Action Masking</h3>
+                <div class="mask-status" id="mask-status">
+                    Mask: INACTIVE (Safe)
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

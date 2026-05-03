@@ -1,0 +1,280 @@
+// Canvas Contexts
+const envCanvas = document.getElementById('intersection-canvas');
+const envCtx = envCanvas.getContext('2d');
+const cvCanvas = document.getElementById('cv-canvas');
+const cvCtx = cvCanvas.getContext('2d');
+
+// DOM Elements
+const demandSelect = document.getElementById('demand-selector');
+const stateMatrix = document.getElementById('state-matrix');
+const rewardVal = document.getElementById('reward-val');
+const pressureVal = document.getElementById('pressure-val');
+const unsafeVal = document.getElementById('unsafe-val');
+const cvVehicles = document.getElementById('cv-vehicles');
+const cvPeds = document.getElementById('cv-peds');
+
+const probNs = document.getElementById('prob-ns');
+const probEw = document.getElementById('prob-ew');
+const probPed = document.getElementById('prob-ped');
+const txtNs = document.getElementById('txt-ns');
+const txtEw = document.getElementById('txt-ew');
+const txtPed = document.getElementById('txt-ped');
+
+const criticVal = document.getElementById('critic-val');
+const maskStatus = document.getElementById('mask-status');
+
+const signalNs = document.getElementById('signal-ns');
+const signalEw = document.getElementById('signal-ew');
+const signalPed = document.getElementById('signal-ped');
+
+// Simulation State
+let phase = 0; // 0: NS, 1: EW, 2: PED, 3: ALL_RED
+let phaseTimer = 0;
+let cumulativeReward = 72000.0; // Positive baseline
+let unsafeCount = 0;
+
+let demandRates = {
+    low: { v: 0.01, p: 0.002 },
+    medium: { v: 0.03, p: 0.005 },
+    high: { v: 0.06, p: 0.015 }
+};
+
+let vehicles = [];
+let pedestrians = [];
+
+// Constants
+const LANE_WIDTH = 40;
+const CENTER = 300;
+const STOP_LINE = 60;
+
+class Vehicle {
+    constructor(direction) {
+        this.direction = direction; // 'N', 'S', 'E', 'W'
+        this.speed = 2;
+        this.stopped = false;
+        this.waitTimer = 0;
+        this.id = Math.random().toString(36).substr(2, 5);
+        
+        if (direction === 'N') { this.x = CENTER - LANE_WIDTH/2; this.y = 0; }
+        if (direction === 'S') { this.x = CENTER + LANE_WIDTH/2; this.y = 600; }
+        if (direction === 'E') { this.x = 600; this.y = CENTER - LANE_WIDTH/2; }
+        if (direction === 'W') { this.x = 0; this.y = CENTER + LANE_WIDTH/2; }
+    }
+
+    update(isGreen, allVehicles) {
+        // Distance to stop line
+        let distToStop = 0;
+        if (this.direction === 'N') distToStop = (CENTER - STOP_LINE) - this.y;
+        if (this.direction === 'S') distToStop = this.y - (CENTER + STOP_LINE);
+        if (this.direction === 'E') distToStop = this.x - (CENTER + STOP_LINE);
+        if (this.direction === 'W') distToStop = (CENTER - STOP_LINE) - this.x;
+
+        // Collision detection (simple queueing)
+        let distToNext = Infinity;
+        allVehicles.forEach(v => {
+            if (v !== this && v.direction === this.direction) {
+                if (this.direction === 'N' && v.y > this.y) distToNext = Math.min(distToNext, v.y - this.y);
+                if (this.direction === 'S' && v.y < this.y) distToNext = Math.min(distToNext, this.y - v.y);
+                if (this.direction === 'E' && v.x < this.x) distToNext = Math.min(distToNext, this.x - v.x);
+                if (this.direction === 'W' && v.x > this.x) distToNext = Math.min(distToNext, v.x - this.x);
+            }
+        });
+
+        let shouldStop = false;
+        if (distToNext < 25) {
+            shouldStop = true;
+        } else if (!isGreen && distToStop > 0 && distToStop < 20) {
+            shouldStop = true;
+        }
+
+        if (shouldStop) {
+            this.stopped = true;
+            this.waitTimer++;
+        } else {
+            this.stopped = false;
+            if (this.direction === 'N') this.y += this.speed;
+            if (this.direction === 'S') this.y -= this.speed;
+            if (this.direction === 'E') this.x -= this.speed;
+            if (this.direction === 'W') this.x += this.speed;
+        }
+    }
+
+    draw(ctx, isCV) {
+        ctx.fillStyle = this.stopped ? '#ef4444' : '#3b82f6';
+        if (isCV) {
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(this.x/2 - 5, this.y/2 - 10, 10, 20);
+            ctx.fillStyle = '#10b981';
+            ctx.fillText(this.id, this.x/2 - 10, this.y/2 - 15);
+        } else {
+            ctx.fillRect(this.x - 10, this.y - 20, 20, 40);
+        }
+    }
+}
+
+class Pedestrian {
+    constructor() {
+        this.corner = Math.floor(Math.random() * 4); // 0: NW, 1: NE, 2: SE, 3: SW
+        this.waitTimer = 0;
+        this.crossing = false;
+        this.progress = 0;
+        
+        let offset = STOP_LINE + 10;
+        if (this.corner === 0) { this.x = CENTER - offset; this.y = CENTER - offset; }
+        if (this.corner === 1) { this.x = CENTER + offset; this.y = CENTER - offset; }
+        if (this.corner === 2) { this.x = CENTER + offset; this.y = CENTER + offset; }
+        if (this.corner === 3) { this.x = CENTER - offset; this.y = CENTER + offset; }
+    }
+
+    update(isGreen) {
+        if (!this.crossing) {
+            this.waitTimer++;
+            if (isGreen) this.crossing = true;
+        } else {
+            this.progress += 1.5;
+        }
+    }
+
+    draw(ctx, isCV) {
+        let drawX = this.x;
+        let drawY = this.y;
+
+        if (this.crossing) {
+            if (this.corner === 0) drawX += this.progress;
+            if (this.corner === 1) drawY += this.progress;
+            if (this.corner === 2) drawX -= this.progress;
+            if (this.corner === 3) drawY -= this.progress;
+        }
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        if (isCV) {
+            ctx.arc(drawX/2, drawY/2, 4, 0, Math.PI*2);
+            ctx.strokeStyle = '#f59e0b';
+            ctx.strokeRect(drawX/2 - 6, drawY/2 - 6, 12, 12);
+        } else {
+            ctx.arc(drawX, drawY, 8, 0, Math.PI*2);
+        }
+        ctx.fill();
+    }
+}
+
+function drawIntersection(ctx, isCV) {
+    if (!isCV) {
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(CENTER - STOP_LINE, 0, STOP_LINE*2, 600);
+        ctx.fillRect(0, CENTER - STOP_LINE, 600, STOP_LINE*2);
+        
+        // Crosswalks
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillRect(CENTER - STOP_LINE, CENTER - STOP_LINE - 20, STOP_LINE*2, 20);
+        ctx.fillRect(CENTER - STOP_LINE, CENTER + STOP_LINE, STOP_LINE*2, 20);
+        ctx.fillRect(CENTER - STOP_LINE - 20, CENTER - STOP_LINE, 20, STOP_LINE*2);
+        ctx.fillRect(CENTER + STOP_LINE, CENTER - STOP_LINE, 20, STOP_LINE*2);
+    }
+}
+
+function PPOAgentLogic() {
+    // 1. Calculate pressure
+    let qNS = vehicles.filter(v => (v.direction === 'N' || v.direction === 'S') && v.stopped).length;
+    let qEW = vehicles.filter(v => (v.direction === 'E' || v.direction === 'W') && v.stopped).length;
+    let pedsWaiting = pedestrians.filter(p => !p.crossing).length;
+    let maxPedWait = pedestrians.length ? Math.max(...pedestrians.filter(p => !p.crossing).map(p => p.waitTimer)) : 0;
+
+    pressureVal.innerText = (qNS + qEW).toString();
+
+    // 2. Action Masking
+    let maskPed = maxPedWait > 200; // Force Ped phase if wait is too long
+    if (maskPed) {
+        maskStatus.innerText = "Mask: ACTIVE (Forced Ped Phase)";
+        maskStatus.className = "mask-status mask-active";
+    } else {
+        maskStatus.innerText = "Mask: INACTIVE (Safe)";
+        maskStatus.className = "mask-status";
+    }
+
+    // 3. Compute Probabilities (Softmax simulation)
+    let logits = [qNS * 0.1, qEW * 0.1, pedsWaiting * 0.5];
+    if (maskPed) {
+        logits[0] = -999;
+        logits[1] = -999;
+        logits[2] = 10;
+    }
+
+    let exp = logits.map(Math.exp);
+    let sumExp = exp.reduce((a, b) => a + b, 0);
+    let probs = exp.map(e => e / sumExp);
+
+    probNs.style.width = (probs[0]*100) + '%';
+    probEw.style.width = (probs[1]*100) + '%';
+    probPed.style.width = (probs[2]*100) + '%';
+
+    txtNs.innerText = (probs[0]*100).toFixed(1) + '%';
+    txtEw.innerText = (probs[1]*100).toFixed(1) + '%';
+    txtPed.innerText = (probs[2]*100).toFixed(1) + '%';
+
+    // 4. Action Selection
+    phaseTimer++;
+    if (phaseTimer > 150) { // Min green time
+        phaseTimer = 0;
+        let rand = Math.random();
+        if (rand < probs[0]) phase = 0;
+        else if (rand < probs[0] + probs[1]) phase = 1;
+        else phase = 2;
+    }
+
+    // 5. Update Signals
+    signalNs.className = phase === 0 ? 'signal top-signal green' : 'signal top-signal red';
+    signalEw.className = phase === 1 ? 'signal left-signal green' : 'signal left-signal red';
+    signalPed.style.opacity = phase === 2 ? '1' : '0.2';
+    if(phase === 2) signalPed.style.textShadow = '0 0 15px #10b981';
+    else signalPed.style.textShadow = 'none';
+
+    // 6. Reward & State Vector
+    let stepReward = 100.0 - (qNS * 0.5 + qEW * 0.5 + pedsWaiting * 1.0);
+    cumulativeReward += stepReward;
+    rewardVal.innerText = '+' + cumulativeReward.toFixed(1);
+    
+    // Critic Value Simulation (moving average of recent rewards)
+    criticVal.innerText = (stepReward * 0.8 + 20).toFixed(1);
+
+    stateMatrix.innerText = `[ ${qNS/10}, ${qEW/10}, ${pedsWaiting}, ${maxPedWait/100}, ${phase===0?1:0}, ${phase===1?1:0}, ${phase===2?1:0} ... ]`;
+    cvVehicles.innerText = vehicles.length;
+    cvPeds.innerText = pedestrians.length;
+}
+
+function loop() {
+    // Spawn
+    let demand = demandSelect.value;
+    let rates = demandRates[demand];
+    if (Math.random() < rates.v) vehicles.push(new Vehicle(['N','S','E','W'][Math.floor(Math.random()*4)]));
+    if (Math.random() < rates.p) pedestrians.push(new Pedestrian());
+
+    // Clean up
+    vehicles = vehicles.filter(v => v.x > -50 && v.x < 650 && v.y > -50 && v.y < 650);
+    pedestrians = pedestrians.filter(p => p.progress < STOP_LINE*2);
+
+    // Update
+    vehicles.forEach(v => v.update((v.direction === 'N' || v.direction === 'S') ? phase === 0 : phase === 1, vehicles));
+    pedestrians.forEach(p => p.update(phase === 2));
+
+    // RL Agent Logic
+    PPOAgentLogic();
+
+    // Draw Main
+    envCtx.clearRect(0, 0, 600, 600);
+    drawIntersection(envCtx, false);
+    vehicles.forEach(v => v.draw(envCtx, false));
+    pedestrians.forEach(p => p.draw(envCtx, false));
+
+    // Draw CV
+    cvCtx.clearRect(0, 0, 300, 300);
+    vehicles.forEach(v => v.draw(cvCtx, true));
+    pedestrians.forEach(p => p.draw(cvCtx, true));
+
+    requestAnimationFrame(loop);
+}
+
+// Start
+loop();
