@@ -89,7 +89,19 @@ This will output the convergence graphs and phase distribution charts into the `
 
 ---
 
-## 5. File Structure
+## 5. Interactive Frontend Dashboard
+
+We have included a purely browser-based interactive dashboard to visually demonstrate the concepts of this research, including the computer vision object detection layer and the PPO agent's decision-making process.
+
+To run the dashboard:
+1. Navigate to the `frontend/` folder.
+2. Double-click the `index.html` file to open it in any modern web browser (e.g., Google Chrome).
+
+No Python backend or npm server is required to run the visual simulation.
+
+---
+
+## 6. File Structure
 
 ```
 .
@@ -103,6 +115,10 @@ This will output the convergence graphs and phase distribution charts into the `
 │   ├── evaluator.py            # Metric calculations
 │   └── plot_results.py         # Graph generation script
 ├── tests/python/               # Unit tests
+├── frontend/                   # Interactive Javascript presentation dashboard
+│   ├── index.html              # Dashboard layout
+│   ├── style.css               # UI styling and glassmorphism theme
+│   └── app.js                  # Intersection animation and PPO simulation logic
 ├── c/                          # C extensions for faster simulation speed
 │   └── queue_stats.c           
 └── results/                    # Output folder (logs, graphs, weights)
