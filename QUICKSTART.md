@@ -1,8 +1,6 @@
-# Quickstart Guide 🚀
+# Research Demonstration Quickstart 🚀
 
-Don't want to read the academic papers and mathematical specifications? Just want to see the AI control traffic in real-time? 
-
-Follow these 3 simple steps to get the Full-Stack Dashboard running on your local machine.
+This guide provides instructions for academic peers and reviewers to locally reproduce the live inference dashboard. By following these steps, you can execute the pre-trained PPO model and visually validate the real-time "Sim-to-Real" transfer capabilities using global CCTV internet streams.
 
 ## Prerequisites
 Ensure you have Python 3.8+ installed on your computer.
@@ -33,8 +31,8 @@ Keep the terminal open (the server needs to stay running).
 Open your favorite web browser (Chrome, Edge, Firefox) and navigate to:
 👉 **http://127.0.0.1:5000**
 
-### Using the Dashboard:
-1. **The JavaScript Simulation:** By default, you will see the mathematical MDP simulation running on the JS canvas.
-2. **Live World Map:** Click the **"Global Map"** button. Click any marker (e.g., London or Tokyo) to instantly connect to a live CCTV camera and watch the AI process traffic in real-time!
-3. **Upload Real Video:** Click **"Upload Real Video"** to upload any local `.mp4` dashcam or traffic footage to see how the AI handles it.
-4. **Predictive GPS Radar:** Watch the simulated UI panel on the bottom left calculate incoming platoons.
+### Verifying the Inference:
+1. **Simulation Verification:** By default, the interface will display the mathematical MDP bounds and the 24D State Vector updating in real-time.
+2. **Live Inference Validation:** Select the **"Global Map"** to trigger the Flask backend to extract an `.m3u8` internet stream. This allows you to observe the YOLOv8 and PPO pipeline operating on unscripted, real-world traffic intersections.
+3. **Local Dataset Testing:** Use the **"Upload Real Video"** module to test the pipeline against any proprietary `.mp4` traffic dataset.
+4. **Predictive Radar Mock-up:** The UI includes a secondary component simulating future GPS telemetry fusion for incoming platoon detection.
