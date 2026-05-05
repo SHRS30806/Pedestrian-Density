@@ -9,6 +9,15 @@ This project uses deep reinforcement learning (DRL) to control traffic lights. M
 
 ---
 
+## 📚 Project Documentation
+If you are auditing this repository, please refer to the detailed technical documentation below:
+1. **[Quickstart Guide](QUICKSTART.md)** - Run the live dashboard in 3 simple steps.
+2. **[System Architecture & Dev Log](ARCHITECTURE.md)** - High-level system design and engineering challenges overcome.
+3. **[Model Specifications](MODEL_SPECIFICATIONS.md)** - Mathematical formulas, hyperparameter tables, and State/Action space definitions.
+4. **[Training & Evaluation Results](TRAINING_RESULTS.md)** - PyTorch layer shapes, Curriculum Learning graphs, and empirical baseline comparisons.
+
+---
+
 ## 1. Introduction
 
 Traffic signal control is an important part of urban infrastructure. Traditional systems run on fixed timers or simple sensors, which struggle during heavy traffic. While reinforcement learning works well for this, many researchers ignore crosswalks.
