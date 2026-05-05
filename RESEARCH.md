@@ -63,3 +63,14 @@ This research proves that Adaptive Traffic Signal Control has evolved far beyond
 By leveraging hardware-agnostic computer vision pipelines (capable of processing standard `.m3u8` or RTSP camera streams), municipalities can retrofit existing 10-year-old intersection cameras into advanced, pedestrian-aware AI controllers without requiring massive infrastructure overhauls. 
 
 The integration of the **Predictive GPS Radar** concept further proves that micro-level visual data can be fused with macro-level GPS telemetry, paving the way for the next generation of predictive, city-wide Smart Grid infrastructure.
+
+---
+
+## 6. References & Data Sources
+The foundational data, emission statistics, and core algorithmic frameworks that evolved into this architecture were sourced from the following:
+
+1. **Urban Congestion Data:** D. Schrank, B. Eisele, and T. Lomax, *"2021 Urban Mobility Report,"* Texas A&M Transportation Institute, 2021.
+2. **CO2 Emission Baselines:** U.S. Environmental Protection Agency, *"Inventory of U.S. Greenhouse Gas Emissions and Sinks: 1990–2021,"* EPA 430-R-23-002, 2023.
+3. **Proximal Policy Optimization:** J. Schulman, F. Wolski, P. Dhariwal, A. Radford, and O. Klimov, *"Proximal policy optimization algorithms,"* arXiv:1707.06347, 2017.
+4. **Computer Vision Layer:** G. Jocher, A. Chaurasia, and J. Qiu, *"Ultralytics YOLOv8,"* 2023.
+5. **Legacy Simulation Environment:** P. A. Lopez et al., *"Microscopic traffic simulation using SUMO,"* 21st IEEE ITSC, 2018.
