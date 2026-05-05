@@ -89,37 +89,42 @@ This will output the convergence graphs and phase distribution charts into the `
 
 ---
 
-## 5. Interactive Frontend Dashboard
+## 5. Full-Stack Dashboard & Live Inference
 
-We have included a purely browser-based interactive dashboard to visually demonstrate the concepts of this research, including the computer vision object detection layer and the PPO agent's decision-making process.
+We have built a full-stack, real-world inference pipeline to visually demonstrate the architecture. The web dashboard connects to a Flask backend that runs the PyTorch PPO model and YOLOv8 object detection in real-time.
 
-To run the dashboard:
-1. Navigate to the `frontend/` folder.
-2. Double-click the `index.html` file to open it in any modern web browser (e.g., Google Chrome).
+### Key Features:
+- **Interactive Global Map:** Uses Leaflet.js to allow users to select live, 24/7 internet traffic cameras from around the world (London, Tokyo, New Delhi).
+- **YouTube Live Integration:** Uses `yt-dlp` to extract `.m3u8` streams from public cameras, feeding internet video directly into the AI.
+- **Predictive GPS Radar:** A simulated UI panel demonstrating how macro-level GPS telemetry can be fused with micro-level Computer Vision to preemptively clear incoming platoons.
+- **Real-Time Streaming:** The backend uses a custom generator to yield MJPEG video frames natively into the browser.
 
-No Python backend or npm server is required to run the visual simulation.
+### Running the Full-Stack Dashboard
 
----
+You must start the Python server to handle the video processing:
+```bash
+cd python
+pip install yt-dlp flask flask-cors ultralytics opencv-python
+python server.py
+```
+Then, open your web browser and navigate to: **http://127.0.0.1:5000**
 
 ## 6. File Structure
 
 ```
 .
 ├── python/                     
-│   ├── configs/                # Configuration parameters (default.yaml)
+│   ├── configs/                # Configuration parameters
+│   ├── server.py               # Flask backend for live dashboard
+│   ├── real_world_inference.py # YOLOv8 and PPO streaming logic
 │   ├── ppo_agent.py            # The PPO math and neural network
-│   ├── dqn_agent.py            # DQN baseline
 │   ├── intersection_env.py     # The traffic simulation math
 │   ├── train.py                # Main training loop
 │   ├── run_experiment.py       # Evaluation and testing script
-│   ├── evaluator.py            # Metric calculations
 │   └── plot_results.py         # Graph generation script
-├── tests/python/               # Unit tests
-├── frontend/                   # Interactive Javascript presentation dashboard
-│   ├── index.html              # Dashboard layout
-│   ├── style.css               # UI styling and glassmorphism theme
-│   └── app.js                  # Intersection animation and PPO simulation logic
-├── c/                          # C extensions for faster simulation speed
-│   └── queue_stats.c           
+├── frontend/                   # Web Dashboard UI
+│   ├── index.html              # Dashboard layout (Map, Radar, CV)
+│   ├── style.css               # UI styling
+│   └── app.js                  # Frontend logic & API calls
 └── results/                    # Output folder (logs, graphs, weights)
 ```
