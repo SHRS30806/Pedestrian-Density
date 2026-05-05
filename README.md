@@ -5,7 +5,7 @@
 
 ## Abstract
 
-This project uses deep reinforcement learning (DRL) to control traffic lights. Most traffic AI models only focus on moving cars quickly, which can be dangerous for pedestrians. Our model uses Proximal Policy Optimization (PPO) to balance vehicle throughput with pedestrian safety. We also use curriculum learning to train the agent on different traffic volumes.
+This project represents the next evolution in deep reinforcement learning (DRL) for traffic signal control. While most traffic AI models focus solely on vehicle throughput inside theoretical simulators, our model uses Proximal Policy Optimization (PPO) to balance vehicle efficiency with strict pedestrian safety constraints. Crucially, this project bridges the "Sim-to-Real" gap by integrating a full-stack computer vision pipeline (YOLOv8), allowing the AI to process unscripted, real-world CCTV internet streams natively in the browser.
 
 ---
 

@@ -10,7 +10,9 @@ It answers the fundamental question: *Why does this research matter, and what di
 
 Modern urban traffic intersections are primarily governed by **Fixed-Time Timers** or simple **Actuated Sensors** (magnetic induction loops). 
 
-These legacy systems suffer from a fatal flaw: **They are entirely blind.** They cannot "see" the density of a traffic jam, nor can they detect pedestrians waiting at a crosswalk. As a result, city planners are forced to manually program rigid traffic light timers that prioritize vehicle throughput above all else. 
+These legacy systems suffer from a fatal flaw: **They are entirely blind.** They cannot "see" the density of a traffic jam, nor can they detect pedestrians waiting at a crosswalk. 
+
+Furthermore, while modern academic literature has explored Reinforcement Learning for traffic control, the vast majority of these models remain trapped in **sterile, theoretical simulators** (relying on perfect, simulated data rather than noisy real-world cameras). This creates a massive "Sim-to-Real" gap.
 
 This leads to two major urban issues:
 1. **Catastrophic Gridlock:** When unexpected rush-hour volumes occur, rigid timers fail to clear massive queues, causing cascading traffic jams.
@@ -35,14 +37,14 @@ Under medium-to-high urban traffic scenarios, the PPO Agent achieved a **~40% re
 ### Finding 2: "Pedestrian-Awareness" is Solvable via Reward Shaping
 Historically, RL models suffer from "Pedestrian Drowning" (delaying 50 cars is mathematically punished heavier than delaying 2 pedestrians). By injecting a severe penalty (-500) for crosswalk violations into the Markov Decision Process (MDP), the PPO agent learned a strict safety constraint. As a result, the agent achieved a **~50% reduction in pedestrian wait times** while maintaining **0 unsafe crossing events**.
 
-### Finding 3: Sim-to-Real Transfer is Viable via Vision Separation
-A major challenge in Reinforcement Learning is deploying a model trained in a clean simulation into the messy real world. Our research proved that by placing a YOLOv8 Object Detection layer *in front* of the PPO agent, the RL network never has to look at messy video pixels. It only looks at the clean, parsed `24D` numerical State Vector. This decoupled architecture allows the exact same neural network weights trained in simulation to operate flawlessly on live CCTV internet streams.
+### Finding 3: Bridging the "Sim-to-Real" Gap via Decoupled Vision
+A major limitation of early traffic AI research is the reliance on simulated pedestrian detections rather than real camera feeds. This project represents a significant architectural evolution by proving that "Sim-to-Real" transfer is viable. By placing a YOLOv8 Object Detection layer *in front* of the PPO agent, the RL network never has to look at messy video pixels. It only looks at the clean, parsed `24D` numerical State Vector. This decoupled architecture allows the exact same neural network weights trained in a mathematical simulation to operate flawlessly on live, unscripted CCTV internet streams from around the globe.
 
 ---
 
 ## 4. Conclusion & Real-World Applicability
 
-This research proves that Adaptive Traffic Signal Control is not just a theoretical simulation exercise. 
+This research proves that Adaptive Traffic Signal Control has evolved far beyond a theoretical simulation exercise. 
 
 By leveraging hardware-agnostic computer vision pipelines (capable of processing standard `.m3u8` or RTSP camera streams), municipalities can retrofit existing 10-year-old intersection cameras into advanced, pedestrian-aware AI controllers without requiring massive infrastructure overhauls. 
 

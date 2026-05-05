@@ -45,8 +45,8 @@ To present the inference in real-time, I built a Flask application.
 
 ## 3. Development Phases & Iteration Log
 
-### Phase 1: Environment Simulation (MDP)
-Development began entirely in simulation (`intersection_env.py`). Before any computer vision could be added, the mathematical Markov Decision Process (MDP) had to be verified. I built a JavaScript canvas visualization to debug the agent's behavior and ensure the queue mathematics were correct.
+### Phase 1: Custom Environment Simulation (MDP)
+To move away from the constraints and overhead of legacy third-party traffic simulators, development began by building a highly customized mathematical Markov Decision Process (MDP) from scratch (`intersection_env.py`). I built a proprietary JavaScript canvas visualization to debug the agent's behavior and ensure the queue mathematics were correct, providing much tighter control over the state space.
 
 ### Phase 2: Curriculum Learning Implementation
 Training the Actor-Critic network proved unstable when initialized on heavy traffic distributions. I implemented a Curriculum Learning strategy, forcing the agent to master low-density traffic for the first 500 episodes before introducing heavy rush-hour conditions. This significantly stabilized the loss function.
