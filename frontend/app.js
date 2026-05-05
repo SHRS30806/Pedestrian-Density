@@ -1,8 +1,9 @@
-// Canvas Contexts
 const envCanvas = document.getElementById('intersection-canvas');
 const envCtx = envCanvas.getContext('2d');
 const cvCanvas = document.getElementById('cv-canvas');
 const cvCtx = cvCanvas.getContext('2d');
+const radarCanvas = document.getElementById('radar-canvas');
+const radarCtx = radarCanvas ? radarCanvas.getContext('2d') : null;
 
 // DOM Elements
 const demandSelect = document.getElementById('demand-selector');
@@ -32,6 +33,10 @@ let phase = 0; // 0: NS, 1: EW, 2: PED, 3: ALL_RED
 let phaseTimer = 0;
 let cumulativeReward = 72000.0; // Positive baseline
 let unsafeCount = 0;
+
+// Radar State
+let radarAngle = 0;
+let gpsClusters = [];
 
 let demandRates = {
     low: { v: 0.01, p: 0.002 },
@@ -273,6 +278,11 @@ function loop() {
     vehicles.forEach(v => v.draw(cvCtx, true));
     pedestrians.forEach(p => p.draw(cvCtx, true));
 
+    // Draw GPS Radar
+    if (radarCtx && !isLiveStream) {
+        drawRadar(radarCtx);
+    }
+
     if (!isLiveStream) {
         requestAnimationFrame(loop);
     }
@@ -383,3 +393,91 @@ if (videoUpload) {
 
 // Start
 loop();
+
+// GPS Radar Logic
+function drawRadar(ctx) {
+    const w = 300;
+    const h = 300;
+    const cx = w / 2;
+    const cy = h / 2;
+    const maxRadius = 140;
+
+    // Clear
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+
+    // Draw Grid
+    ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
+    ctx.lineWidth = 1;
+    for(let r = 30; r <= maxRadius; r += 30) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+
+    // Radar Sweep
+    radarAngle += 0.05;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(radarAngle);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, -maxRadius);
+    ctx.arc(0, 0, maxRadius, -Math.PI/2, -Math.PI/2 + 0.3);
+    ctx.lineTo(0, 0);
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+    ctx.fill();
+    ctx.restore();
+
+    // Spawn Clusters
+    if (Math.random() < 0.02) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = maxRadius;
+        gpsClusters.push({ angle, dist, size: Math.random() * 5 + 3, life: 1.0 });
+    }
+
+    // Draw Clusters
+    let incomingETA = "--:--";
+    let densityStr = "Low";
+    
+    ctx.fillStyle = '#10b981';
+    gpsClusters.forEach(c => {
+        c.dist -= 0.5; // Move towards center
+        c.life -= 0.002;
+        
+        if (c.dist > 10 && c.life > 0) {
+            const x = cx + Math.cos(c.angle) * c.dist;
+            const y = cy + Math.sin(c.angle) * c.dist;
+            
+            // Check if swept by radar line
+            let diff = radarAngle % (Math.PI*2) - (c.angle < 0 ? c.angle + Math.PI*2 : c.angle);
+            if (diff < 0) diff += Math.PI*2;
+            
+            if (diff < 0.5 || diff > Math.PI*2 - 0.5) {
+                ctx.beginPath();
+                ctx.arc(x, y, c.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#10b981';
+            }
+        }
+    });
+
+    gpsClusters = gpsClusters.filter(c => c.dist > 10 && c.life > 0);
+    
+    // Update UI Stats
+    if (gpsClusters.length > 3) {
+        let closest = Math.min(...gpsClusters.map(c => c.dist));
+        incomingETA = (closest / 10).toFixed(1) + " min";
+        densityStr = gpsClusters.length > 6 ? "High" : "Medium";
+    }
+    
+    const etaEl = document.getElementById('radar-eta');
+    const densEl = document.getElementById('radar-density');
+    if (etaEl) etaEl.innerText = incomingETA;
+    if (densEl) densEl.innerText = densityStr;
+    if (densEl) densEl.style.color = densityStr === "High" ? "#ef4444" : (densityStr === "Medium" ? "#f59e0b" : "#60a5fa");
+}
