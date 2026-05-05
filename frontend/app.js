@@ -290,8 +290,10 @@ let isLiveStream = false;
 let map = null;
 const cameras = [
     { name: "Jackson Hole, USA", lat: 43.4799, lng: -110.7624, url: "https://www.youtube.com/watch?v=1EiC9bvVGnk" },
-    { name: "Abbey Road, London", lat: 51.5322, lng: -0.1772, url: "https://www.youtube.com/watch?v=N0m1XmvBeX4" },
-    { name: "Shibuya Crossing, Tokyo", lat: 35.6595, lng: 139.7005, url: "https://www.youtube.com/watch?v=HpdO5Kq3o7Y" }
+    { name: "London, UK", lat: 51.4907, lng: -0.0984, url: "https://www.youtube.com/watch?v=8JCk5M_xrBs" },
+    { name: "Shibuya Crossing, Tokyo", lat: 35.6595, lng: 139.7005, url: "https://www.youtube.com/watch?v=8H3nRCFVR6Y" },
+    { name: "Mumbai, India", lat: 18.9750, lng: 72.8258, url: "https://www.youtube.com/watch?v=3GAdDlBwRyc" },
+    { name: "Sukhumvit Road, Bangkok", lat: 13.7367, lng: 100.5231, url: "https://www.youtube.com/watch?v=UemFRPrl1hk" }
 ];
 
 if (mapBtn) {
