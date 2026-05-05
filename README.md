@@ -12,9 +12,10 @@ This project uses deep reinforcement learning (DRL) to control traffic lights. M
 ## 📚 Project Documentation
 If you are auditing this repository, please refer to the detailed technical documentation below:
 1. **[Quickstart Guide](QUICKSTART.md)** - Run the live dashboard in 3 simple steps.
-2. **[System Architecture & Dev Log](ARCHITECTURE.md)** - High-level system design and engineering challenges overcome.
-3. **[Model Specifications](MODEL_SPECIFICATIONS.md)** - Mathematical formulas, hyperparameter tables, and State/Action space definitions.
-4. **[Training & Evaluation Results](TRAINING_RESULTS.md)** - PyTorch layer shapes, Curriculum Learning graphs, and empirical baseline comparisons.
+2. **[Research Findings](RESEARCH.md)** - Problem statement, hypothesis, and academic significance.
+3. **[System Architecture & Dev Log](ARCHITECTURE.md)** - High-level system design and engineering challenges overcome.
+4. **[Model Specifications](MODEL_SPECIFICATIONS.md)** - Mathematical formulas, hyperparameter tables, and State/Action space definitions.
+5. **[Training & Evaluation Results](TRAINING_RESULTS.md)** - PyTorch layer shapes, Curriculum Learning graphs, and empirical baseline comparisons.
 
 ---
 
