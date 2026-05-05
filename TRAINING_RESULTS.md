@@ -39,7 +39,7 @@ To solve this, **Curriculum Learning** was implemented over 1,000 episodes:
 ### Training Convergence Curve
 *(The graph below shows the cumulative reward stabilizing over the 1,000 episodes, proving the Curriculum Learning approach successfully prevented catastrophic forgetting during the high-demand phase).*
 
-![PPO Training Curve](file:///c:/Users/Shreyas%20Rastogi/Desktop/Study%20related/Python/Codes/TPM_DL/python/results/figures/training_curve.png)
+![PPO Training Curve](python/results/figures/training_curve.png)
 
 ---
 
@@ -63,10 +63,15 @@ The results below show the performance under **Medium Traffic Demand**.
 
 *Note: The PPO agent achieved a massive 40% reduction in vehicle wait times and a 50% reduction in pedestrian wait times compared to the baselines, all while maintaining 0 unsafe crossing events.*
 
-### 3.2 Traffic Light Phase Distribution
+### 3.2 Performance Comparison Graph
+Visual representation of the evaluation metrics across Low, Medium, and High demand scenarios.
+
+![Performance Comparison](python/results/figures/comparison.png)
+
+### 3.3 Traffic Light Phase Distribution
 The graph below illustrates how the PPO agent dynamically adjusts the traffic light phases compared to the rigid baselines. Notice how the PPO agent allocates phase time purely based on real-time visual demand rather than fixed percentages.
 
-![Phase Distribution](file:///c:/Users/Shreyas%20Rastogi/Desktop/Study%20related/Python/Codes/TPM_DL/python/results/figures/phase_dist.png)
+![Phase Distribution](python/results/figures/phase_dist.png)
 
 ---
 > [!NOTE]
