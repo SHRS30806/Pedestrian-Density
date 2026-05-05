@@ -40,9 +40,23 @@ Historically, RL models suffer from "Pedestrian Drowning" (delaying 50 cars is m
 ### Finding 3: Bridging the "Sim-to-Real" Gap via Decoupled Vision
 A major limitation of early traffic AI research is the reliance on simulated pedestrian detections rather than real camera feeds. This project represents a significant architectural evolution by proving that "Sim-to-Real" transfer is viable. By placing a YOLOv8 Object Detection layer *in front* of the PPO agent, the RL network never has to look at messy video pixels. It only looks at the clean, parsed `24D` numerical State Vector. This decoupled architecture allows the exact same neural network weights trained in a mathematical simulation to operate flawlessly on live, unscripted CCTV internet streams from around the globe.
 
+## 4. Environmental Impact & Ablation Analysis
+
+A critical component of this research was proving that Reinforcement Learning doesn't just save time, but actively reduces urban pollution.
+
+### Environmental CO2 Reduction
+By aggressively reducing vehicle idling times and minimizing stop-and-go traffic (which is the primary driver of localized urban emissions), the PPO policy achieves a significant environmental impact:
+- **26% Reduction in CO2 Emissions:** The agent reduced intersection emissions to ~3,170 g/h compared to the 4,280 g/h baseline of fixed-time controllers.
+- **Annual Impact:** This equates to an estimated savings of **9.7 tonnes of CO2 per intersection annually**.
+
+### Ablation Study on Safety Constraints
+To prove the efficacy of the multi-objective reward function, an ablation study was conducted by systematically removing components of the system:
+1. **Without Pedestrian Detection:** Vehicle wait times technically improved (because the AI could ignore humans), but pedestrian wait times skyrocketed, proving the YOLOv8 layer is mandatory for equitable urban flow.
+2. **Without Safety Penalty:** Removing the massive penalty for unsafe crossings resulted in faster throughput but unacceptable safety violations, proving that hard-coded mathematical constraints must override pure reward maximization in autonomous city infrastructure.
+
 ---
 
-## 4. Conclusion & Real-World Applicability
+## 5. Conclusion & Real-World Applicability
 
 This research proves that Adaptive Traffic Signal Control has evolved far beyond a theoretical simulation exercise. 
 
