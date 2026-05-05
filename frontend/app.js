@@ -280,9 +280,58 @@ function loop() {
 
 // Full-Stack Video Integration
 const uploadBtn = document.getElementById('upload-btn');
+const mapBtn = document.getElementById('map-btn');
 const videoUpload = document.getElementById('video-upload');
 const liveStream = document.getElementById('live-stream');
+const mapContainer = document.getElementById('map-container');
 let isLiveStream = false;
+
+// Map Setup
+let map = null;
+const cameras = [
+    { name: "Jackson Hole, USA", lat: 43.4799, lng: -110.7624, url: "https://www.youtube.com/watch?v=1EiC9bvVGnk" },
+    { name: "Abbey Road, London", lat: 51.5322, lng: -0.1772, url: "https://www.youtube.com/watch?v=N0m1XmvBeX4" },
+    { name: "Shibuya Crossing, Tokyo", lat: 35.6595, lng: 139.7005, url: "https://www.youtube.com/watch?v=HpdO5Kq3o7Y" }
+];
+
+if (mapBtn) {
+    mapBtn.addEventListener('click', () => {
+        isLiveStream = true;
+        envCanvas.style.display = "none";
+        signalNs.style.display = "none";
+        signalEw.style.display = "none";
+        signalPed.style.display = "none";
+        liveStream.style.display = "none";
+        mapContainer.style.display = "block";
+        
+        if (!map) {
+            map = L.map('map-container').setView([20, 0], 2);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            cameras.forEach(cam => {
+                const marker = L.marker([cam.lat, cam.lng]).addTo(map);
+                marker.bindPopup(`<b>${cam.name}</b><br><button onclick="startLiveStream('${cam.url}', '${cam.name}')" style="margin-top:5px; padding:3px 8px; background:#10b981; border:none; color:white; border-radius:3px; cursor:pointer;">Stream Live AI</button>`);
+            });
+        }
+    });
+}
+
+window.startLiveStream = function(youtubeUrl, camName) {
+    mapBtn.innerText = "Connecting...";
+    liveStream.style.display = "block";
+    
+    // Start MJPEG stream via backend
+    liveStream.src = `http://127.0.0.1:5000/stream_live?url=${encodeURIComponent(youtubeUrl)}&t=${new Date().getTime()}`;
+    
+    liveStream.onload = () => {
+        mapBtn.innerText = `Live: ${camName}`;
+    };
+    liveStream.onerror = () => {
+        mapBtn.innerText = "Stream Error";
+    };
+};
 
 if (uploadBtn) {
     uploadBtn.addEventListener('click', () => {

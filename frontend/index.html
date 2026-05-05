@@ -6,6 +6,8 @@
     <title>DRL Traffic Control Dashboard</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
     <header class="glass-panel">
@@ -51,11 +53,13 @@
                     </select>
                     <input type="file" id="video-upload" accept="video/mp4" style="display:none;">
                     <button id="upload-btn" class="upload-btn">Upload Real Video</button>
+                    <button id="map-btn" class="upload-btn" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">Global Map</button>
                 </div>
             </div>
             <div class="canvas-wrapper">
                 <canvas id="intersection-canvas" width="600" height="600"></canvas>
-                <img id="live-stream" style="display:none; width:100%; height:100%; object-fit:contain; border-radius:10px;">
+                <div id="map-container" style="display:none; width:100%; height:100%; border-radius:10px; z-index: 5;"></div>
+                <img id="live-stream" style="display:none; width:100%; height:100%; object-fit:contain; border-radius:10px; z-index: 10; position: absolute; top:0; left:0; background:#000;">
                 <!-- Signal Indicators -->
                 <div id="signal-ns" class="signal top-signal red"></div>
                 <div id="signal-ew" class="signal left-signal green"></div>
