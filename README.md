@@ -9,7 +9,7 @@ This project represents the next evolution in deep reinforcement learning (DRL) 
 
 ---
 
-## 📚 Project Documentation
+## Project Documentation
 If you are auditing this repository, please refer to the detailed technical documentation below:
 1. **[Quickstart Guide](QUICKSTART.md)** - Run the live dashboard in 3 simple steps.
 2. **[Research Findings](RESEARCH.md)** - Problem statement, hypothesis, and academic significance.

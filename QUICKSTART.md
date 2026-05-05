@@ -1,4 +1,4 @@
-# Research Demonstration Quickstart 🚀
+# Research Demonstration Quickstart
 
 This guide provides instructions for academic peers and reviewers to locally reproduce the live inference dashboard. By following these steps, you can execute the pre-trained PPO model and visually validate the real-time "Sim-to-Real" transfer capabilities using global CCTV internet streams.
 
@@ -29,7 +29,7 @@ python server.py
 Keep the terminal open (the server needs to stay running).
 
 Open your favorite web browser (Chrome, Edge, Firefox) and navigate to:
-👉 **http://127.0.0.1:5000**
+**http://127.0.0.1:5000**
 
 ### Verifying the Inference:
 1. **Simulation Verification:** By default, the interface will display the mathematical MDP bounds and the 24D State Vector updating in real-time.
