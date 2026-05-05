@@ -75,7 +75,7 @@ def main():
     evaluator = Evaluator(cfg)
 
     # Run evaluation
-    print("\nRunning comprehensive evaluation...")
+    print("\nRunning full evaluation...")
     results = evaluator.full_comparison(agent, n_episodes=args.episodes)
 
     # Debug check (only if structure is wrong)

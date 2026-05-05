@@ -49,10 +49,13 @@
                         <option value="medium" selected>Medium</option>
                         <option value="high">High</option>
                     </select>
+                    <input type="file" id="video-upload" accept="video/mp4" style="display:none;">
+                    <button id="upload-btn" class="upload-btn">Upload Real Video</button>
                 </div>
             </div>
             <div class="canvas-wrapper">
                 <canvas id="intersection-canvas" width="600" height="600"></canvas>
+                <img id="live-stream" style="display:none; width:100%; height:100%; object-fit:contain; border-radius:10px;">
                 <!-- Signal Indicators -->
                 <div id="signal-ns" class="signal top-signal red"></div>
                 <div id="signal-ew" class="signal left-signal green"></div>

@@ -75,11 +75,11 @@ train:
   - - 1000
     - high
   eval_episodes: 5
-  eval_every_n: 10
+  eval_every_n: 50
   log_dir: results/logs
-  log_interval: 5
+  log_interval: 10
   output_dir: results
   run_name: run_001
   seed: 42
-  steps_per_episode: 100
-  total_episodes: 100
+  steps_per_episode: 720
+  total_episodes: 5

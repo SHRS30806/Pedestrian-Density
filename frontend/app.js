@@ -273,7 +273,61 @@ function loop() {
     vehicles.forEach(v => v.draw(cvCtx, true));
     pedestrians.forEach(p => p.draw(cvCtx, true));
 
-    requestAnimationFrame(loop);
+    if (!isLiveStream) {
+        requestAnimationFrame(loop);
+    }
+}
+
+// Full-Stack Video Integration
+const uploadBtn = document.getElementById('upload-btn');
+const videoUpload = document.getElementById('video-upload');
+const liveStream = document.getElementById('live-stream');
+let isLiveStream = false;
+
+if (uploadBtn) {
+    uploadBtn.addEventListener('click', () => {
+        videoUpload.click();
+    });
+}
+
+if (videoUpload) {
+    videoUpload.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        uploadBtn.innerText = "Uploading...";
+        
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('http://localhost:5000/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                uploadBtn.innerText = "Processing live...";
+                isLiveStream = true;
+                
+                // Hide mock canvas and show live stream
+                envCanvas.style.display = "none";
+                signalNs.style.display = "none";
+                signalEw.style.display = "none";
+                signalPed.style.display = "none";
+                
+                liveStream.style.display = "block";
+                
+                // Start MJPEG stream
+                liveStream.src = `http://localhost:5000/stream_video?t=${new Date().getTime()}`;
+            } else {
+                uploadBtn.innerText = "Upload failed";
+            }
+        } catch (err) {
+            console.error(err);
+            uploadBtn.innerText = "Server Error (Is Flask running?)";
+        }
+    });
 }
 
 // Start
