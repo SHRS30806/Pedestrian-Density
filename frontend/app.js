@@ -291,6 +291,7 @@ function loop() {
 // Full-Stack Video Integration
 const uploadBtn = document.getElementById('upload-btn');
 const mapBtn = document.getElementById('map-btn');
+const resetBtn = document.getElementById('reset-btn');
 const videoUpload = document.getElementById('video-upload');
 const liveStream = document.getElementById('live-stream');
 const mapContainer = document.getElementById('map-container');
@@ -315,6 +316,9 @@ if (mapBtn) {
         signalPed.style.display = "none";
         liveStream.style.display = "none";
         mapContainer.style.display = "block";
+        uploadBtn.style.display = "none";
+        mapBtn.style.display = "none";
+        resetBtn.style.display = "inline-block";
         
         if (!map) {
             map = L.map('map-container').setView([20, 0], 2);
@@ -349,45 +353,66 @@ if (uploadBtn) {
     uploadBtn.addEventListener('click', () => {
         videoUpload.click();
     });
-}
 
-if (videoUpload) {
     videoUpload.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         uploadBtn.innerText = "Uploading...";
-        
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://localhost:5000/upload', {
+            const res = await fetch('http://127.0.0.1:5000/upload', {
                 method: 'POST',
                 body: formData
             });
 
-            if (response.ok) {
+            if (res.ok) {
                 uploadBtn.innerText = "Processing live...";
-                isLiveStream = true;
+                uploadBtn.style.display = "none";
+                mapBtn.style.display = "none";
+                resetBtn.style.display = "inline-block";
                 
-                // Hide mock canvas and show live stream
+                isLiveStream = true;
                 envCanvas.style.display = "none";
                 signalNs.style.display = "none";
                 signalEw.style.display = "none";
                 signalPed.style.display = "none";
-                
+                mapContainer.style.display = "none";
                 liveStream.style.display = "block";
                 
                 // Start MJPEG stream
-                liveStream.src = `http://localhost:5000/stream_video?t=${new Date().getTime()}`;
-            } else {
-                uploadBtn.innerText = "Upload failed";
+                liveStream.src = `http://127.0.0.1:5000/stream_video?t=${new Date().getTime()}`;
             }
         } catch (err) {
-            console.error(err);
-            uploadBtn.innerText = "Server Error (Is Flask running?)";
+            console.error("Upload failed", err);
+            uploadBtn.innerText = "Upload Failed";
         }
+    });
+}
+
+if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+        isLiveStream = false;
+        liveStream.src = ""; // Stop the stream
+        liveStream.style.display = "none";
+        mapContainer.style.display = "none";
+        
+        envCanvas.style.display = "block";
+        signalNs.style.display = "block";
+        signalEw.style.display = "block";
+        signalPed.style.display = "block";
+        
+        resetBtn.style.display = "none";
+        uploadBtn.style.display = "inline-block";
+        uploadBtn.innerText = "Upload Real Video";
+        mapBtn.style.display = "inline-block";
+        mapBtn.innerText = "Global Map";
+        
+        // Restart Simulation
+        lastTime = performance.now();
+        requestAnimationFrame(loop);
     });
 }
 
