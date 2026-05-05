@@ -1,0 +1,15 @@
+# Computer Vision & Deep Learning
+torch
+numpy
+ultralytics
+opencv-python
+
+# Reinforcement Learning Environment
+gymnasium
+pyyaml
+matplotlib
+
+# Backend Web Server & Streaming
+flask
+flask-cors
+yt-dlp
